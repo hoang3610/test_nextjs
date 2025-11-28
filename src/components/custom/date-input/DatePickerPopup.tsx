@@ -6,7 +6,7 @@ interface DatePickerPopupProps {
     isVisible: boolean
     typeDisplay: DateType
     style: React.CSSProperties
-    pickerVisibleRef: React.RefObject<HTMLDivElement>
+    pickerVisibleRef: React.RefObject<HTMLDivElement | null>
     onChangeDate: (next: boolean) => void
     onClear: () => void
     onToday: () => void
