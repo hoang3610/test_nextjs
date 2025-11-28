@@ -1,6 +1,6 @@
 'use client'; // 1. Bắt buộc: Vì dùng hook và event handler
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';   // 2. Thay thế react-router-dom
 import Image from 'next/image'; // 3. Component ảnh tối ưu của Next.js
 import { useCart } from '@/hooks/useCart'; // Nên dùng alias @ thay cho ../../../
@@ -13,6 +13,14 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // This code runs only on the client, after the component has mounted.
+    // It ensures that client-specific rendering (like price formatting)
+    // happens after the initial server render, avoiding a hydration mismatch.
+    setIsMounted(true);
+  }, []);
 
   // Format tiền Việt Nam
   const formatPrice = (price: number) => {
@@ -72,7 +80,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </Link>
         </h3>
         <p className="mt-1 text-lg font-bold text-blue-600 dark:text-blue-400">
-          {formatPrice(product.price)}
+          {/* 
+            Conditionally render the price only on the client-side after mounting.
+            This prevents a hydration mismatch between the server and client,
+            as locale-specific formatting can differ between environments.
+          */}
+          {isMounted ? formatPrice(product.price) : '...'}
         </p>
       </div>
     </div>

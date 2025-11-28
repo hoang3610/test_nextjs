@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { mockProducts } from '@/components/features/products/data/products'; // Sử dụng alias @ cho gọn
 import ProductSection from '@/components/features/products/ProductSection';
 import CategorySection, { type Category } from '@/components/features/products/CategorySection';
+import { Button } from '@/components/ui/button';
 
 // 1. Cấu hình SEO cho trang chủ
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default async function HomePage() {
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500 dark:text-gray-400">
           Phong cách của bạn, lựa chọn của chúng tôi.
         </p>
+        <Button variant="destructive">Xóa dữ liệu</Button>
       </div>
 
       {/* Danh mục */}

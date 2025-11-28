@@ -1,0 +1,111 @@
+'use client';
+
+import React from 'react';
+import { Plus } from 'lucide-react';
+
+// --- Imports ---
+import { Table, Column } from '../../../custom/table';
+import { ActionButtons } from '../../../custom/action-button';
+
+// --- Interface ---
+interface Product {
+  id: string;
+  name: string;
+  price_original: number;
+  category_id: number;
+  product_type: number;
+  is_app_visible: boolean;
+  skus: {
+    sku: string;
+    dimension_length: number;
+    dimension_width: number;
+    dimension_height: number;
+    weight: number;
+  };
+  images: string;
+  images_mobile: string;
+  short_description: string;
+  brand?: string;
+  stock?: number;
+  status?: string;
+}
+
+// --- Props Interface ---
+interface TableProductProps {
+  products: Product[];
+  currentPage: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onCreate: () => void;
+  onView: (product: Product) => void;
+  onEdit: (product: Product) => void;
+}
+
+const TableProduct: React.FC<TableProductProps> = ({
+  products = [],
+  currentPage,
+  itemsPerPage,
+  onPageChange,
+  onCreate,
+  onView,
+  onEdit,
+}) => {
+  // --- Helpers ---
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+
+  // --- Columns ---
+  const columns: Column<Product>[] = [
+    {
+      header: 'Sản phẩm',
+      className: 'min-w-[250px]',
+      render: (item) => (
+        <div className="flex items-center gap-3">
+          <img src={item.images} alt={item.name} className="w-10 h-10 rounded object-cover bg-gray-100" />
+          <div>
+            <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
+            <p className="text-xs text-gray-500">{item.skus?.sku}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Giá bán',
+      className: 'min-w-[120px]',
+      render: (item) => <div className="font-medium text-gray-700">{formatCurrency(item.price_original)}</div>,
+    },
+    {
+      header: 'Hành động',
+      className: 'text-right w-[120px]',
+      render: (item) => <ActionButtons onView={() => onView(item)} onEdit={() => onEdit(item)} />,
+    },
+  ];
+
+  return (
+    <div className="h-screen flex flex-col bg-gray-50 font-sans">
+      <div className="flex flex-col h-full p-6 gap-6">
+        <div className="shrink-0 flex justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-800">Quản lý sản phẩm</h2>
+          <button onClick={onCreate} className="bg-[#1462B0] text-white px-4 py-2 rounded-lg flex items-center gap-2">
+            <Plus size={18} /> Thêm mới
+          </button>
+        </div>
+        <div className="flex-1 min-h-0">
+          <Table<Product>
+            columns={columns}
+            data={products}
+            pagination={{
+              currentPage,
+              totalPages: Math.ceil(products.length / itemsPerPage), // This should be based on total count from API in a real app
+              totalItems: products.length, // Same as above
+              itemsPerPage,
+              onPageChange,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TableProduct;
