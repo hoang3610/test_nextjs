@@ -32,8 +32,8 @@ export function useDateInput({
     const pickerRef = useRef<HTMLDivElement>(null)
     const pickerVisibleRef = useRef<HTMLDivElement>(null)
     const timePickerRef = useRef<HTMLDivElement>(null)
-    const hourInputRef = useRef<HTMLInputElement>(null)
-    const minuteInputRef = useRef<HTMLInputElement>(null)
+    const hourInputRef = useRef<HTMLInputElement | null>(null)
+    const minuteInputRef = useRef<HTMLInputElement | null>(null)
 
     useEffect(() => {
         if (value === '') {
@@ -296,7 +296,7 @@ export function useDateInput({
         }
     }, [isTimePickerVisible]);
 
-    const updateTimePickerPosition = (inputRef: React.RefObject<HTMLInputElement>, pickerRef: React.RefObject<HTMLDivElement>) => {
+    const updateTimePickerPosition = (inputRef: React.RefObject<HTMLInputElement | null>, pickerRef: React.RefObject<HTMLDivElement | null>) => {
         if (inputRef.current && pickerRef.current) {
             const inputRect = inputRef.current.getBoundingClientRect();
             const pickerHeight = pickerRef.current.getBoundingClientRect().height;
