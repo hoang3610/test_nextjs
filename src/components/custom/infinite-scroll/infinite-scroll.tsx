@@ -52,11 +52,11 @@ export default class InfiniteScroll extends Component<Props, State> {
 
   private throttledOnScrollListener: (e: MouseEvent) => void;
   private _scrollableNode: HTMLElement | undefined | null;
-  private el: HTMLElement | undefined | Window & typeof globalThis;
-  private _infScroll: HTMLDivElement | undefined;
+  private el: HTMLElement | undefined | Window & typeof globalThis | null;
+  private _infScroll: HTMLDivElement | undefined | null;
   private lastScrollTop = 0;
   private actionTriggered = false;
-  private _pullDown: HTMLDivElement | undefined;
+  private _pullDown: HTMLDivElement | undefined | null;
 
   // variables to keep track of pull down behaviour
   private startY = 0;
@@ -355,13 +355,13 @@ export default class InfiniteScroll extends Component<Props, State> {
       >
         <div
           className={`infinite-scroll-component ${this.props.className || ''}`}
-          ref={(infScroll: HTMLDivElement) => (this._infScroll = infScroll)}
+          ref={(infScroll: HTMLDivElement | null) => { this._infScroll = infScroll; }}
           style={style}
         >
           {this.props.pullDownToRefresh && (
             <div
               style={{ position: 'relative' }}
-              ref={(pullDown: HTMLDivElement) => (this._pullDown = pullDown)}
+              ref={(pullDown: HTMLDivElement | null) => { this._pullDown = pullDown; }}
             >
               <div
                 style={{

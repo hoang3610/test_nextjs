@@ -4,8 +4,8 @@ import { usePopper } from 'react-popper';
 const Dropdown = (props : any, forwardedRef: any) => {
     const [visibility, setVisibility] = useState<any>(false);
 
-    const referenceRef = useRef<any>();
-    const popperRef = useRef<any>();
+    const referenceRef = useRef<any>(null);
+    const popperRef = useRef<any>(null);
 
     const { styles, attributes } = usePopper(referenceRef.current, popperRef.current, {
         placement: props.placement || 'bottom-end',
@@ -13,7 +13,7 @@ const Dropdown = (props : any, forwardedRef: any) => {
             {
                 name: 'offset',
                 options: {
-                    offset: props.offset || [(0)],
+                    offset: props.offset || [0, 8],
                 },
             },
         ],

@@ -19,10 +19,13 @@
     "mantine-datatable": "^1.7.17",
     "mongoose": "^9.0.0",
     "next": "16.0.5",
+    "rc-tooltip": "^6.4.0",
     "react": "^18.3.1",
     "react-apexcharts": "^1.8.0",
     "react-dom": "^18.3.1",
     "react-popper": "^2.3.0",
+    "react-select": "^5.10.2",
+    "react-select-async-paginate": "^0.7.11",
     "react-toastify": "^11.0.5",
     "recharts": "^3.5.0",
     "tailwind-merge": "^3.4.0"

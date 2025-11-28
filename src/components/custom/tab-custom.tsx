@@ -63,7 +63,7 @@ export const TabsCustom: React.FC<TabsCustomProps> = ({
     React.Children.map(children, (child, index) => {
       if (React.isValidElement<TabCustomProps>(child)) {
         return React.cloneElement(child, {
-          ref: (el: HTMLButtonElement) => (tabRefs.current[index] = el),
+          ref: (el: HTMLButtonElement | null) => { tabRefs.current[index] = el; },
           isActive: value === index,
           onClick: () => onChange(index),
           typeDisplay, // Pass typeDisplay to TabCustom
