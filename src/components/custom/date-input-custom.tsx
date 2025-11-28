@@ -10,7 +10,7 @@ import {
 } from "date-fns";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ReactComponent as IconCalendar } from "../../assets/icons/ic_calendar.svg";
+import IconCalendar from "../../assets/icons/ic_calendar.svg";
 
 type DateType = "date" | "date-time" | "time" | "week" | "month" | "year";
 
@@ -226,8 +226,8 @@ const DateCustomInput: React.FC<DateInputProps> = ({
   };
 
   const updateTimePickerPosition = (
-    inputRef: React.RefObject<HTMLInputElement>,
-    pickerRef: React.RefObject<HTMLDivElement>
+    inputRef: React.RefObject<HTMLInputElement | null>,
+    pickerRef: React.RefObject<HTMLDivElement | null>
   ) => {
     if (inputRef.current && pickerRef.current) {
       const inputRect = inputRef.current.getBoundingClientRect();
@@ -1124,7 +1124,7 @@ const DateCustomInput: React.FC<DateInputProps> = ({
               ? placeholder || getDefaultPlaceholder(type)
               : fullDateString}
           </p>
-          {!disabled && <IconCalendar />}
+          {!disabled && <img src={IconCalendar} alt="calendar icon" />}
         </button>
         {createPortal(
           <div data-portal="true">

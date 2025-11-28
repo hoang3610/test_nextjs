@@ -1,5 +1,5 @@
 import React, { useRef, useState, MouseEvent, ReactNode, useEffect } from "react";
-import { ReactComponent as ArrowDown } from "../../../assets/icons/ic_arrow_down.svg";
+import ArrowDown from "../../../assets/icons/ic_arrow_down.svg";
 
 interface CollapsibleProps {
   title: string;

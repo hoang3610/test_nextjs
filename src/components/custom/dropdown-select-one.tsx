@@ -1,6 +1,6 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import iCUserDefault from "../../assets/icons/ic_user_default.svg";
-import { ReactComponent as ArrowDown } from "../../assets/icons/ic_arrow_down.svg";
+import ArrowDown from "../../assets/icons/ic_arrow_down.svg";
 import SearchCustom from "./search-custom";
 import InfiniteScroll from "./infinite-scroll/infinite-scroll";
 import ImageCustom from "./image-custom";
@@ -291,7 +291,7 @@ const DropdownSelectOne = <T,>({
         </p>
 
         <span className="p-2">
-          <ArrowDown className={isOpen ? "" : "text-[#cccccc]"} />
+          <img src={ArrowDown} alt="arrow down" className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
         </span>
       </button>
       {isOpen && contentDropdown}
