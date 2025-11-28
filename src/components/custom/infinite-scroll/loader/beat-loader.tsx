@@ -16,7 +16,7 @@ function BeatLoader({
   size = 5,
   margin = 2,
   ...additionalProps
-}: LoaderSizeMarginProps): JSX.Element | null {
+}: LoaderSizeMarginProps): React.JSX.Element | null {
   const wrapper: React.CSSProperties = {
     display: "inherit",
     ...cssOverride,
