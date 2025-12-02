@@ -7,7 +7,7 @@ import aspectRatio from '@tailwindcss/aspect-ratio'
 /** @type {import('tailwindcss').Config} */
 export default {
   // 2️⃣ Bật dark mode (giữ nguyên)
-  darkMode: ['class', 'class'],
+  darkMode: ['class'],
 
   // 3️⃣ Nơi quét class (giữ nguyên)
   content: [

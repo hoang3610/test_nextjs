@@ -1,3 +1,5 @@
+"use client"
+
 import React from 'react';
 // Import Header/Footer từ thư mục bạn vừa copy
 // (Lưu ý: Dấu @ đại diện cho thư mục src/)
