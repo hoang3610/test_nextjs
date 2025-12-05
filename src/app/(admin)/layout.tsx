@@ -38,6 +38,7 @@ const AdminLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Sản phẩm', href: '/admin/products', icon: Package },
+    { name: 'Danh mục sản phẩm', href: '/admin/categories', icon: Package },
     { name: 'Đơn hàng', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Khách hàng', href: '/admin/users', icon: Users },
     { name: 'Bài viết', href: '/admin/posts', icon: FileText },

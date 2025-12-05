@@ -31,7 +31,7 @@ export default async function HomePage() {
     <div className="divide-y divide-gray-200 dark:divide-gray-700 pb-20">
       
       {/* Hero Banner */}
-      <div className="text-center py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950">
+      <div className="bg-blue-900 text-center py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">
           HoangGia Shop
         </h1>

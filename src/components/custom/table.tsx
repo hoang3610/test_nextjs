@@ -62,11 +62,11 @@ export const Table = <T,>({
           
           {/* HEADER LUÔN LUÔN HIỂN THỊ */}
           <thead className="sticky top-0 z-30 bg-gray-50 shadow-sm">
-            <tr className="border-b border-gray-200">
+            <tr>
               {columns.map((col, index) => (
                 <th
                   key={index}
-                  className={`p-4 text-xs font-bold text-gray-600 uppercase tracking-wider bg-gray-50 whitespace-nowrap ${col.className || ""}`}
+                  className={`p-4 text-xs font-bold text-gray-600 uppercase tracking-wider bg-gray-50 whitespace-nowrap border border-gray-200 ${col.className || ""}`}
                 >
                   {col.header}
                 </th>
@@ -74,7 +74,7 @@ export const Table = <T,>({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="bg-white">
             {/* 3. LOGIC HIỂN THỊ DỮ LIỆU */}
             {data && data.length > 0 ? (
               // TRƯỜNG HỢP CÓ DATA: Render bình thường
@@ -85,7 +85,10 @@ export const Table = <T,>({
                   className={`hover:bg-blue-50 transition-colors duration-150 group ${onRowClick ? "cursor-pointer" : ""}`}
                 >
                   {columns.map((col, colIndex) => (
-                    <td key={colIndex} className={`p-4 text-sm text-gray-700 whitespace-nowrap ${col.className || ""}`}>
+                    <td
+                      key={colIndex}
+                      className={`p-4 text-sm text-gray-700 whitespace-nowrap border border-gray-200 ${col.className || ""}`}
+                    >
                       {col.render ? col.render(item) : col.accessor ? String(item[col.accessor]) : ""}
                     </td>
                   ))}
@@ -111,7 +114,7 @@ export const Table = <T,>({
       </div>
 
       {/* Pagination Footer - Chỉ hiện nếu có data và số trang > 1 */}
-      {pagination && data.length > 0 && pagination.totalPages > 1 && (
+      {pagination && data.length > 0 && pagination.totalPages >= 1 && (
         <div className="p-4 border-t border-gray-200 bg-white flex flex-col md:flex-row items-center justify-between gap-4 z-10 shrink-0">
           <div className="text-sm text-gray-500">
              Hiển thị <span className="font-medium">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> - <span className="font-medium">{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}</span> trên <span className="font-medium">{pagination.totalItems}</span>

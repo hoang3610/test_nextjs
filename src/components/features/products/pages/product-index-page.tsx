@@ -46,6 +46,132 @@ const initialProducts: Product[] = [
     stock: 100,
     status: 'active',
   },
+  {
+    id: 'PRD-002',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-001', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-003',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-001', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-004',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-001', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-005',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-001', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-006',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-001', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-007',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-001', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-008',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-001', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-009',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-009', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
+  {
+    id: 'PRD-010',
+    name: 'Áo Thun Basic',
+    price_original: 250000,
+    category_id: 1,
+    product_type: 1,
+    is_app_visible: true,
+    skus: { sku: 'AT-010', dimension_length: 30, dimension_width: 20, dimension_height: 5, weight: 200 },
+    images: 'https://placehold.co/40',
+    images_mobile: '',
+    short_description: 'Mô tả ngắn',
+    stock: 100,
+    status: 'active',
+  },
   // ... more mock data if needed
 ];
 
@@ -57,7 +183,7 @@ const ProductIndexPage = () => {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Partial<Product> | null>(null);
   const [isViewMode, setViewMode] = useState(false);
-  const itemsPerPage = 7;
+  const itemsPerPage = 8;
 
   // --- Handlers ---
   const handleCreate = () => {
@@ -105,6 +231,7 @@ const ProductIndexPage = () => {
       <TableProduct
         products={paginatedProducts}
         currentPage={currentPage}
+        totalItems={products.length}
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
         onCreate={handleCreate}
