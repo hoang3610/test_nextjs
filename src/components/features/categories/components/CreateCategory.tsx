@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Upload, Settings, Bold, Italic, Underline, List, AlignLeft } from 'lucide-react';
+import { Upload } from 'lucide-react';
 
 // --- Imports ---
 import { ModalCustom } from '../../../custom/modal-custom';
@@ -36,6 +36,7 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
     code: '',
     is_app_visible: false,
     description: '',
+    image: '',
   });
 
   // --- Handlers ---
@@ -56,6 +57,26 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {field}
+    </div>
+  );
+
+  const renderRowImageUploading = ({ labelName, required, value }: any) => (
+    <div className="mt-0">
+      <label className="text-sm font-semibold text-gray-700 mb-2 block">
+        {labelName} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div className="flex items-center gap-4">
+        <div className="w-24 h-24 rounded-lg bg-gray-50 border border-gray-300 flex items-center justify-center overflow-hidden relative group shrink-0">
+          {value ? (
+            <img src={value} className="w-full h-full object-cover" alt="Preview" />
+          ) : (
+            <Upload className="text-gray-300" size={24} />
+          )}
+        </div>
+        <button className="px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded hover:bg-blue-100 flex items-center gap-2 transition-colors">
+          <Upload size={16} /> Tải ảnh lên
+        </button>
+      </div>
     </div>
   );
 
@@ -109,19 +130,28 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
                   ),
                 })}
               </div>
-              <div className="lg:col-span-3">
-                {renderField({
-                  label: 'Mô tả trên mobile',
-                  field: (
-                    <textarea
-                      className="form-input"
-                      rows={4}
-                      placeholder="Nhập mô tả..."
-                      value={values.description || ''}
-                      onChange={(e) => setFormData({ ...values, description: e.target.value })}
-                    />
-                  ),
-                })}
+              <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-1">
+                  {renderRowImageUploading({
+                    required: true,
+                    labelName: "Hình ảnh",
+                    value: values.image,
+                    name: "image"
+                  })}
+                </div>
+                <div className="lg:col-span-2">
+                  {renderField({
+                    label: 'Mô tả trên mobile',
+                    field: (
+                      <textarea
+                        className="form-input h-24 resize-none"
+                        placeholder="Nhập mô tả..."
+                        value={values.description || ''}
+                        onChange={(e) => setFormData({ ...values, description: e.target.value })}
+                      />
+                    ),
+                  })}
+                </div>
               </div>
             </div>
           </div>

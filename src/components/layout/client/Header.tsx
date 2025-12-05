@@ -7,7 +7,7 @@ import Image from 'next/image';           // 4. Dùng Image tối ưu
 
 // Giả định bạn đã copy các hooks này vào folder src/hooks hoặc src/context
 // Nhớ sửa đường dẫn import cho đúng với dự án mới nhé
-import { useTheme } from '@/hooks/useTheme'; 
+import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 
@@ -15,13 +15,13 @@ const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const { cartItems, cartCount, cartTotal } = useCart();
-  
+
   const [isProductMenuOpen, setProductMenuOpen] = useState(false);
   const [isCartMenuOpen, setCartMenuOpen] = useState(false);
-  
+
   const closeProductMenuTimer = useRef<NodeJS.Timeout | null>(null); // Fix type cho TypeScript
   const closeCartMenuTimer = useRef<NodeJS.Timeout | null>(null);
-  
+
   const pathname = usePathname(); // 5. Lấy đường dẫn hiện tại
   const isCartPage = pathname === '/cart';
 
@@ -37,12 +37,12 @@ const Header: React.FC = () => {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        
+
         {/* 1. Logo */}
         <div>
           <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
             </svg>
             <span>HoangGia</span>
           </Link>
@@ -53,9 +53,9 @@ const Header: React.FC = () => {
           <Link href="/" className={getLinkClass('/')}>
             Trang chủ
           </Link>
-          
+
           {/* --- Products Dropdown Menu --- */}
-          <div 
+          <div
             className="relative h-full flex items-center"
             onMouseEnter={() => {
               if (closeProductMenuTimer.current) clearTimeout(closeProductMenuTimer.current);
@@ -66,8 +66,8 @@ const Header: React.FC = () => {
             }}
           >
             {/* Logic Active cho menu cha: Nếu path chứa '/products' thì active */}
-            <Link 
-              href="/products" 
+            <Link
+              href="/products"
               className={`${pathname.includes('/products') ? activeNavLinkClasses : ''} ${navLinkClasses} flex items-center gap-1`}
             >
               Sản phẩm
@@ -90,7 +90,7 @@ const Header: React.FC = () => {
                   <div className="space-y-3">
                     <h3 className="font-bold text-gray-800 dark:text-white">Phụ kiện</h3>
                     <ul className="space-y-2 text-sm">
-                       <li><Link href="/products?category=balo" className={navLinkClasses}>Balo & Túi</Link></li>
+                      <li><Link href="/products?category=balo" className={navLinkClasses}>Balo & Túi</Link></li>
                     </ul>
                   </div>
                 </div>
@@ -133,7 +133,7 @@ const Header: React.FC = () => {
             <Link href="/cart" className="text-gray-800 dark:text-gray-200 flex items-center">
               Giỏ hàng ({cartCount})
             </Link>
-            
+
             {isCartMenuOpen && !isCartPage && (
               <div className="absolute mt-[1px] top-full right-0 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border dark:border-gray-700 z-10 rounded-t-none">
                 {cartItems.length > 0 ? (
@@ -143,9 +143,9 @@ const Header: React.FC = () => {
                         <div key={item.id} className="flex items-center gap-4 mb-4">
                           {/* 7. Dùng Next Image thay cho img */}
                           <div className="relative h-16 w-16 flex-shrink-0">
-                            <Image 
-                              src={item.imageUrl} 
-                              alt={item.name} 
+                            <Image
+                              src={item.imageUrl}
+                              alt={item.name}
                               fill
                               className="object-cover rounded"
                             />
@@ -159,14 +159,14 @@ const Header: React.FC = () => {
                     </div>
                     {/* ... Phần tổng tiền giữ nguyên ... */}
                     <div className="border-t dark:border-gray-700 p-4">
-                        <div className="flex justify-between font-bold mb-4">
-                          <span>Tổng cộng:</span>
-                          <span>{cartTotal.toLocaleString()}₫</span>
-                        </div>
-                        <div className="flex gap-2">
-                           <Link href="/cart" className="flex-1 text-center bg-gray-200 dark:bg-gray-600 text-sm font-bold py-2 px-4 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500">Xem giỏ hàng</Link>
-                           <button className="flex-1 text-center bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-blue-700">Thanh toán</button>
-                        </div>
+                      <div className="flex justify-between font-bold mb-4">
+                        <span>Tổng cộng:</span>
+                        <span>{cartTotal.toLocaleString()}₫</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href="/cart" className="flex-1 text-center bg-gray-200 dark:bg-gray-600 text-sm font-bold py-2 px-4 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500">Xem giỏ hàng</Link>
+                        <button className="flex-1 text-center bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-blue-700">Thanh toán</button>
+                      </div>
                     </div>
                   </>
                 ) : (

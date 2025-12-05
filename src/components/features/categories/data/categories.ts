@@ -3,6 +3,7 @@ export interface Category {
   code: string;
   name: string;
   description?: string;
+  image?: string;
   is_app_visible: boolean;
 }
 
@@ -11,6 +12,7 @@ export interface CategoryPayload {
   name?: string;
   code?: string;
   description?: string;
+  image?: string;
   is_app_visible: number;
   id?: number;
 }

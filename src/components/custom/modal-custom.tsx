@@ -30,7 +30,23 @@ export const ModalCustom = ({
 
   return (
     <Modal
-      overflow="inside"
+      lockScroll
+      styles={{
+        modal: {
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          maxHeight: 'calc(100vh - 40px)',
+        },
+        body: {
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          overflow: 'hidden',
+          minHeight: 0,
+        },
+      }}
+
       padding={0}
       transitionDuration={350}
       exitTransitionDuration={350}
@@ -60,9 +76,10 @@ export const ModalCustom = ({
           </button>
         )}
       </div>
-      <div className={`p-4 bg-[#F3F4F6] dark:bg-[#060716] dark:text-white ${className}`}>
-        {bodyModal}
-
+      <div className="flex-1 overflow-y-auto">
+        <div className={`p-4 bg-[#F3F4F6] dark:bg-[#060716] dark:text-white ${className}`}>
+          {bodyModal}
+        </div>
       </div>
       <div id="modal-footer" className="flex items-center justify-end gap-4 px-4 py-2 shadow-lg h-[3.75rem] bg-white dark:bg-black">
         {footerModal}
