@@ -9,6 +9,7 @@ import CreateProduct from '../components/CreateProduct';
 import EditProduct, { ProductFormState } from '../components/EditProduct';
 
 import { showToast } from '@/components/custom/custom-toast';
+import ModalConfirmCustom from '@/components/custom/modal-confirm-custom';
 
 const ProductIndexPage = () => {
   // --- State ---
@@ -22,6 +23,19 @@ const ProductIndexPage = () => {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Partial<Product> | null>(null);
   const [isViewMode, setViewMode] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'DELETE' | 'CHANGE_STATUS' | null;
+    product: Product | null;
+    title: string;
+    content: string;
+  }>({
+    isOpen: false,
+    type: null,
+    product: null,
+    title: '',
+    content: '',
+  });
 
   // --- Handlers ---
   const fetchProducts = useCallback(async () => {
@@ -285,10 +299,63 @@ const ProductIndexPage = () => {
     }
   };
 
+  const handleDelete = (product: Product) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'DELETE',
+      product: product,
+      title: 'Xóa sản phẩm',
+      content: `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}" không?`,
+    });
+  };
+
+  const handleChangeStatus = (product: Product) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'CHANGE_STATUS',
+      product: product,
+      title: 'Thay đổi trạng thái',
+      content: `Bạn có chắc chắn muốn thay đổi trạng thái sản phẩm "${product.name}" không?`,
+    });
+  };
+
   const handleCloseModals = () => {
     setCreateModalOpen(false);
     setEditModalOpen(false);
     setSelectedProduct(null);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmModal.product || !confirmModal.type) return;
+
+    const { type, product } = confirmModal;
+
+    try {
+      if (type === 'DELETE') {
+        const response = await fetch(`/api/products/${product.id}/delete`);
+        if (response.ok) {
+          showToast({ message: "Xóa sản phẩm thành công!", type: "success" });
+          fetchProducts();
+        } else {
+          const data = await response.json();
+          showToast({ message: `Xóa sản phẩm thất bại: ${data.error}`, type: "error" });
+        }
+      } else if (type === 'CHANGE_STATUS') {
+        const response = await fetch(`/api/products/${product.id}/change-status`);
+        if (response.ok) {
+          showToast({ message: "Thay đổi trạng thái sản phẩm thành công!", type: "success" });
+          fetchProducts();
+        } else {
+          const data = await response.json();
+          showToast({ message: `Thay đổi trạng thái sản phẩm thất bại: ${data.error}`, type: "error" });
+        }
+      }
+    } catch (error) {
+      console.error(`Error ${type === 'DELETE' ? 'deleting' : 'changing status'} product:`, error);
+      showToast({ message: `Có lỗi xảy ra khi ${type === 'DELETE' ? 'xóa' : 'thay đổi trạng thái'} sản phẩm.`, type: "error" });
+    } finally {
+      setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    }
   };
 
   return (
@@ -302,6 +369,8 @@ const ProductIndexPage = () => {
         onCreate={handleCreate}
         onView={handleView}
         onEdit={handleEdit}
+        onDelete={handleDelete}
+        onChangeStatus={handleChangeStatus}
       />
       <CreateProduct
         isOpen={isCreateModalOpen}
@@ -317,6 +386,14 @@ const ProductIndexPage = () => {
           isViewMode={isViewMode}
         />
       )}
+      <ModalConfirmCustom
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmAction}
+        titleModal={confirmModal.title}
+        content={confirmModal.content}
+        typeIcon="warning"
+      />
     </>
   );
 };

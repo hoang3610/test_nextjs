@@ -19,6 +19,8 @@ interface TableProductProps {
   onCreate: () => void;
   onView: (product: Product) => void;
   onEdit: (product: Product) => void;
+  onDelete: (product: Product) => void;
+  onChangeStatus: (product: Product) => void;
 }
 
 const TableProduct: React.FC<TableProductProps> = ({
@@ -30,6 +32,8 @@ const TableProduct: React.FC<TableProductProps> = ({
   onCreate,
   onView,
   onEdit,
+  onDelete,
+  onChangeStatus,
 }) => {
   // --- Helpers ---
   const formatCurrency = (value: number) =>
@@ -77,7 +81,7 @@ const TableProduct: React.FC<TableProductProps> = ({
     {
       header: 'Hành động',
       className: 'text-right w-[120px]',
-      render: (item) => <ActionButtons onView={() => onView(item)} onEdit={() => onEdit(item)} />,
+      render: (item) => <ActionButtons onView={() => onView(item)} onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} onChangeStatus={() => onChangeStatus(item)} />,
     },
   ];
 

@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Createcategory from '../components/CreateCategory';
 import Editcategory from '../components/EditCategory';
 import TableCategory from '../components/TableCategory';
+import ModalConfirmCustom from '@/components/custom/modal-confirm-custom';
 import { Category, CategoryPayload } from '../data/categories';
 
 import { showToast } from '@/components/custom/custom-toast';
@@ -19,8 +20,21 @@ const CategoryIndexPage = () => {
 
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Partial<Category> | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isViewMode, setViewMode] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'DELETE' | 'CHANGE_STATUS' | null;
+    category: Category | null;
+    title: string;
+    content: string;
+  }>({
+    isOpen: false,
+    type: null,
+    category: null,
+    title: '',
+    content: '',
+  });
 
   const itemsPerPage = 10; // Default limit
 
@@ -93,7 +107,6 @@ const CategoryIndexPage = () => {
     }
   };
 
-
   // --- Handlers ---
   const handleCreate = () => {
     setCreateModalOpen(true);
@@ -151,6 +164,59 @@ const CategoryIndexPage = () => {
     }
   };
 
+  const handleDelete = (category: Category) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'DELETE',
+      category: category,
+      title: 'Xóa danh mục',
+      content: `Bạn có chắc chắn muốn xóa danh mục "${category.name}" không?`,
+    });
+  };
+
+  const handleChangeStatus = (category: Category) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'CHANGE_STATUS',
+      category: category,
+      title: 'Thay đổi trạng thái',
+      content: `Bạn có chắc chắn muốn thay đổi trạng thái danh mục "${category.name}" không?`,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmModal.category || !confirmModal.type) return;
+
+    const { type, category } = confirmModal;
+
+    try {
+      if (type === 'DELETE') {
+        const response = await fetch(`/api/categories/${category.id}/delete`);
+        if (response.ok) {
+          showToast({ message: "Xóa danh mục thành công!", type: "success" });
+          fetchCategories();
+        } else {
+          const data = await response.json();
+          showToast({ message: `Xóa danh mục thất bại: ${data.error}`, type: "error" });
+        }
+      } else if (type === 'CHANGE_STATUS') {
+        const response = await fetch(`/api/categories/${category.id}/change-status`);
+        if (response.ok) {
+          showToast({ message: "Thay đổi trạng thái danh mục thành công!", type: "success" });
+          fetchCategories();
+        } else {
+          const data = await response.json();
+          showToast({ message: `Thay đổi trạng thái danh mục thất bại: ${data.error}`, type: "error" });
+        }
+      }
+    } catch (error) {
+      console.error(`Error ${type === 'DELETE' ? 'deleting' : 'changing status'} category:`, error);
+      showToast({ message: `Có lỗi xảy ra khi ${type === 'DELETE' ? 'xóa' : 'thay đổi trạng thái'} danh mục.`, type: "error" });
+    } finally {
+      setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    }
+  };
+
   const handleSaveEditedCategory = async (editedCategory: CategoryPayload) => {
     if (!editedCategory.id) {
       alert("Lỗi: Không tìm thấy ID danh mục cần sửa.");
@@ -199,6 +265,8 @@ const CategoryIndexPage = () => {
         onCreate={handleCreate}
         onView={handleView}
         onEdit={handleEdit}
+        onDelete={handleDelete}
+        onChangeStatus={handleChangeStatus}
       />
 
       <Createcategory
@@ -215,6 +283,15 @@ const CategoryIndexPage = () => {
           isViewMode={isViewMode}
         />
       )}
+
+      <ModalConfirmCustom
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmAction}
+        titleModal={confirmModal.title}
+        content={confirmModal.content}
+        typeIcon="warning"
+      />
     </>
   );
 };

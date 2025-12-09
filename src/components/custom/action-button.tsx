@@ -1,27 +1,29 @@
 import React from "react";
-import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2, Power } from "lucide-react";
 
 interface ActionButtonsProps {
   onCreate?: () => void;
   onView?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onChangeStatus?: () => void;
   className?: string;
 }
 
-export const ActionButtons = ({ 
-  onCreate, 
-  onView, 
-  onEdit, 
+export const ActionButtons = ({
+  onCreate,
+  onView,
+  onEdit,
   onDelete,
+  onChangeStatus,
   className = ""
 }: ActionButtonsProps) => {
   // Cấu hình chung cho icon size
-  const iconSize = 18; 
+  const iconSize = 18;
 
   return (
     <div className={`flex items-center justify-end gap-2 ${className}`}>
-      
+
       {/* 1. CREATE (Thêm) - Màu Xanh Lá */}
       {onCreate && (
         <button
@@ -63,6 +65,16 @@ export const ActionButtons = ({
           className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all hover:scale-110"
         >
           <Trash2 size={iconSize} />
+        </button>
+      )}
+
+      {/* 5. CHANGE STATUS (Thay đổi trạng thái) - Màu Đỏ */}
+      {onChangeStatus && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onChangeStatus(); }}
+          className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all hover:scale-110"
+        >
+          <Power size={iconSize} />
         </button>
       )}
     </div>

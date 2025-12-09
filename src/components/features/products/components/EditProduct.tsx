@@ -64,6 +64,7 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
     name: '',
     original_price: 0,
     price: 0,
+    stock: 0,
     category_id: '',
     product_type: PRODUCT_TYPE.PHYSICAL,
     is_active: false,
@@ -95,11 +96,11 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
             variantAttributes[attr.name] = attr.value;
           });
           return {
-            sku: sku.sku,
-            price: sku.price,
-            stock: sku.stock,
+            sku: sku.sku || '',
+            price: sku.price || 0,
+            stock: sku.stock || 0,
             attributes: variantAttributes,
-            original_price: sku.original_price, // Map original_price
+            original_price: sku.original_price || 0, // Map original_price
           };
         }) || []
       };
@@ -330,13 +331,14 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                   field: (
                     <input
                       disabled={isViewMode || values.has_variants}
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       className="form-input"
                       placeholder="Nhập giá sản phẩm"
-                      value={values.price || 0}
+                      value={values.price ?? 0}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, price: Number(e.target.value) })
+                        setFormData({ ...values, price: Number(e.target.value.replace(/\D/g, '')) })
                       }
                     />
                   ),
@@ -347,13 +349,14 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                   field: (
                     <input
                       disabled={isViewMode || values.has_variants}
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       className="form-input"
                       placeholder="Nhập giá nhập"
-                      value={values.original_price || 0}
+                      value={values.original_price ?? 0}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, original_price: Number(e.target.value) })
+                        setFormData({ ...values, original_price: Number(e.target.value.replace(/\D/g, '')) })
                       }
                     />
                   ),
@@ -364,13 +367,14 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                   field: (
                     <input
                       disabled={isViewMode || values.has_variants}
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       className="form-input"
                       placeholder="Nhập tồn kho"
-                      value={values.stock || 0}
+                      value={values.stock ?? 0}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, stock: Number(e.target.value) })
+                        setFormData({ ...values, stock: Number(e.target.value.replace(/\D/g, '')) })
                       }
                     />
                   ),
@@ -547,14 +551,15 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Giá</label>
                                 <input
                                   disabled={isViewMode}
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="form-input w-full bg-white h-9"
                                   placeholder="0"
-                                  value={variant.price}
+                                  value={variant.price ?? 0}
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
-                                    newVariants[index].price = Number(e.target.value);
+                                    newVariants[index].price = Number(e.target.value.replace(/\D/g, ''));
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
@@ -563,14 +568,15 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Giá nhập</label>
                                 <input
                                   disabled={isViewMode}
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="form-input w-full bg-white h-9"
                                   placeholder="0"
-                                  value={variant.original_price}
+                                  value={variant.original_price ?? 0}
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
-                                    newVariants[index].original_price = Number(e.target.value);
+                                    newVariants[index].original_price = Number(e.target.value.replace(/\D/g, ''));
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
@@ -581,14 +587,15 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Kho</label>
                                 <input
                                   disabled={isViewMode}
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="form-input w-full bg-white h-9"
                                   placeholder="0"
-                                  value={variant.stock}
+                                  value={variant.stock ?? 0}
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
-                                    newVariants[index].stock = Number(e.target.value);
+                                    newVariants[index].stock = Number(e.target.value.replace(/\D/g, ''));
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
@@ -601,7 +608,7 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                 type="text"
                                 className="form-input w-full bg-white h-9"
                                 placeholder="Mã SKU"
-                                value={variant.sku}
+                                value={variant.sku ?? ''}
                                 onChange={(e) => {
                                   const newVariants = [...values.variants!];
                                   newVariants[index].sku = e.target.value;
@@ -631,16 +638,18 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                 <td className="px-4 py-3 font-medium text-gray-900">
                                   {variant.attributes && Object.values(variant.attributes).join(' - ')}
                                 </td>
+
                                 <td className="px-4 py-3">
                                   <input
                                     disabled={isViewMode}
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="form-input py-1 px-2 h-8 w-full"
-                                    value={variant.price}
+                                    value={variant.price ?? 0}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                       const newVariants = [...values.variants!];
-                                      newVariants[index].price = Number(e.target.value);
+                                      newVariants[index].price = Number(e.target.value.replace(/\D/g, ''));
                                       setFormData({ ...values, variants: newVariants });
                                     }}
                                   />
@@ -648,13 +657,14 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                 <td className="px-4 py-3">
                                   <input
                                     disabled={isViewMode}
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="form-input py-1 px-2 h-8 w-full"
-                                    value={variant.original_price}
+                                    value={variant.original_price ?? 0}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                       const newVariants = [...values.variants!];
-                                      newVariants[index].original_price = Number(e.target.value);
+                                      newVariants[index].original_price = Number(e.target.value.replace(/\D/g, ''));
                                       setFormData({ ...values, variants: newVariants });
                                     }}
                                   />
@@ -662,13 +672,14 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                 <td className="px-4 py-3">
                                   <input
                                     disabled={isViewMode}
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="form-input py-1 px-2 h-8 w-full"
-                                    value={variant.stock}
+                                    value={variant.stock ?? 0}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                       const newVariants = [...values.variants!];
-                                      newVariants[index].stock = Number(e.target.value);
+                                      newVariants[index].stock = Number(e.target.value.replace(/\D/g, ''));
                                       setFormData({ ...values, variants: newVariants });
                                     }}
                                   />
@@ -678,7 +689,7 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                                     disabled={isViewMode}
                                     type="text"
                                     className="form-input py-1 px-2 h-8 w-full"
-                                    value={variant.sku}
+                                    value={variant.sku ?? ''}
                                     onChange={(e) => {
                                       const newVariants = [...values.variants!];
                                       newVariants[index].sku = e.target.value;

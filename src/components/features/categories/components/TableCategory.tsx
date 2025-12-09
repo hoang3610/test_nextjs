@@ -27,6 +27,8 @@ interface TableCategoryProps {
   onCreate: () => void;
   onView: (category: Category) => void;
   onEdit: (category: Category) => void;
+  onDelete: (category: Category) => void;
+  onChangeStatus: (category: Category) => void;
 }
 
 const TableCategory: React.FC<TableCategoryProps> = ({
@@ -38,6 +40,8 @@ const TableCategory: React.FC<TableCategoryProps> = ({
   onCreate,
   onView,
   onEdit,
+  onDelete,
+  onChangeStatus
 }) => {
   // --- Columns ---
   const columns: Column<Category>[] = [
@@ -76,7 +80,7 @@ const TableCategory: React.FC<TableCategoryProps> = ({
     {
       header: 'Hành động',
       className: 'text-right w-[120px]',
-      render: (item) => <ActionButtons onView={() => onView(item)} onEdit={() => onEdit(item)} />,
+      render: (item) => <ActionButtons onView={() => onView(item)} onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} onChangeStatus={() => onChangeStatus(item)} />,
     },
   ];
 

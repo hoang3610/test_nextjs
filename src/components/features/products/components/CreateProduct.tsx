@@ -61,11 +61,13 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
   // --- State ---
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [touchedSlug, setTouchedSlug] = useState(false); // New state to track if slug was manually edited
   const [formData, setFormData] = useState<Partial<ProductFormData>>({
     name: '',
     slug: '',
     original_price: 0,
     price: 0,
+    stock: 0,
     category_id: '',
     product_type: PRODUCT_TYPE.PHYSICAL,
     is_active: false,
@@ -99,12 +101,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
 
     if (isOpen) {
       fetchCategories();
+      setTouchedSlug(false); // Reset touched state
       // Reset form data when opening
       setFormData({
         name: '',
         slug: '',
         original_price: 0,
         price: 0,
+        stock: 0,
         category_id: '',
         product_type: PRODUCT_TYPE.PHYSICAL,
         is_active: false,
@@ -119,13 +123,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
     }
   }, [isOpen]);
 
-  // Auto-generate slug when name changes (only in edit mode/create mode)
-  useEffect(() => {
-    if (!isViewMode && formData.name && !formData.slug) {
-      const generatedSlug = createSlug(formData.name);
-      setFormData(prev => ({ ...prev, slug: generatedSlug }));
-    }
-  }, [formData.name, isViewMode]);
+  // Remove the problematic useEffect that was here
 
   // --- Handlers ---
   const handleSaveClick = () => {
@@ -323,7 +321,11 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                       className="form-input"
                       placeholder="Nhập tên sản phẩm"
                       value={values.name || ''}
-                      onChange={(e) => setFormData({ ...values, name: e.target.value })}
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        const newSlug = !touchedSlug ? createSlug(newName) : values.slug;
+                        setFormData({ ...values, name: newName, slug: newSlug });
+                      }}
                     />
                   ),
                 })}
@@ -339,7 +341,10 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                       className="form-input text-gray-500"
                       placeholder="tu-dong-tao-tu-ten-san-pham"
                       value={values.slug || ''}
-                      onChange={(e) => setFormData({ ...values, slug: e.target.value })}
+                      onChange={(e) => {
+                        setTouchedSlug(true);
+                        setFormData({ ...values, slug: e.target.value });
+                      }}
                     />
                   ),
                 })}
@@ -378,13 +383,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                   field: (
                     <input
                       disabled={isViewMode || values.has_variants}
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       className="form-input"
                       placeholder="Nhập giá sản phẩm"
-                      value={values.price || 0}
+                      value={values.price}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, price: Number(e.target.value) })
+                        setFormData({ ...values, price: Number(e.target.value.replace(/\D/g, '')) })
                       }
                     />
                   ),
@@ -395,13 +401,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                   field: (
                     <input
                       disabled={isViewMode || values.has_variants}
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       className="form-input"
                       placeholder="Nhập giá nhập"
-                      value={values.original_price || 0}
+                      value={values.original_price}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, original_price: Number(e.target.value) })
+                        setFormData({ ...values, original_price: Number(e.target.value.replace(/\D/g, '')) })
                       }
                     />
                   ),
@@ -412,13 +419,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                   field: (
                     <input
                       disabled={isViewMode || values.has_variants}
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       className="form-input"
                       placeholder="Nhập tồn kho"
-                      value={values.stock || 0}
+                      value={values.stock}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, stock: Number(e.target.value) })
+                        setFormData({ ...values, stock: Number(e.target.value.replace(/\D/g, '')) })
                       }
                     />
                   ),
@@ -595,14 +603,15 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                                 <label className="text-sm font-bold text-gray-600 mb-1 block">Giá</label>
                                 <input
                                   disabled={isViewMode}
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="form-input w-full bg-white h-10 px-3 text-base"
                                   placeholder="0"
                                   value={variant.price}
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
-                                    newVariants[index].price = Number(e.target.value);
+                                    newVariants[index].price = Number(e.target.value.replace(/\D/g, ''));
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
@@ -611,14 +620,15 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                                 <label className="text-sm font-bold text-gray-600 mb-1 block">Giá nhập</label>
                                 <input
                                   disabled={isViewMode}
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="form-input w-full bg-white h-10 px-3 text-base"
                                   placeholder="0"
                                   value={variant.original_price}
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
-                                    newVariants[index].original_price = Number(e.target.value);
+                                    newVariants[index].original_price = Number(e.target.value.replace(/\D/g, ''));
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
@@ -629,14 +639,15 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                                 <label className="text-sm font-bold text-gray-600 mb-1 block">Kho</label>
                                 <input
                                   disabled={isViewMode}
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="form-input w-full bg-white h-10 px-3 text-base"
                                   placeholder="0"
                                   value={variant.stock}
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
-                                    newVariants[index].stock = Number(e.target.value);
+                                    newVariants[index].stock = Number(e.target.value.replace(/\D/g, ''));
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
@@ -679,16 +690,18 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                                 <td className="px-4 py-3 font-medium text-gray-900">
                                   {Object.values(variant.attributes).join(' - ')}
                                 </td>
+
                                 <td className="px-4 py-3">
                                   <input
                                     disabled={isViewMode}
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="form-input py-1 px-2 h-8 w-full"
                                     value={variant.price}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                       const newVariants = [...values.variants!];
-                                      newVariants[index].price = Number(e.target.value);
+                                      newVariants[index].price = Number(e.target.value.replace(/\D/g, ''));
                                       setFormData({ ...values, variants: newVariants });
                                     }}
                                   />
@@ -696,13 +709,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                                 <td className="px-4 py-3">
                                   <input
                                     disabled={isViewMode}
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="form-input py-1 px-2 h-8 w-full"
                                     value={variant.original_price}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                       const newVariants = [...values.variants!];
-                                      newVariants[index].original_price = Number(e.target.value);
+                                      newVariants[index].original_price = Number(e.target.value.replace(/\D/g, ''));
                                       setFormData({ ...values, variants: newVariants });
                                     }}
                                   />
@@ -710,13 +724,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                                 <td className="px-4 py-3">
                                   <input
                                     disabled={isViewMode}
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="form-input py-1 px-2 h-8 w-full"
                                     value={variant.stock}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                       const newVariants = [...values.variants!];
-                                      newVariants[index].stock = Number(e.target.value);
+                                      newVariants[index].stock = Number(e.target.value.replace(/\D/g, ''));
                                       setFormData({ ...values, variants: newVariants });
                                     }}
                                   />

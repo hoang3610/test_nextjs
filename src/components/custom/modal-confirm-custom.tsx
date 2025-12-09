@@ -1,4 +1,5 @@
 import { ReactNode, useState } from "react";
+import Image from "next/image";
 import { IconCheckSuccess, IcXCircle, IconWarning } from "../icons/icon-group";
 import { ButtonCustom } from "./button-custom";
 import { ModalCustom } from "./modal-custom"
@@ -67,9 +68,9 @@ const ModalConfirmCustom = ({
                     <div className="flex flex-col items-center justify-center">
                         {(() => {
                             switch (typeIcon) {
-                                case 'success': return <IconCheckSuccess className="w-16 h-16 mx-auto" />
-                                case 'error': return <IcXCircle className="w-16 h-16 mx-auto" />
-                                case 'warning': return <IconWarning className="w-16 h-16 mx-auto" />
+                                case 'success': return <Image src={IconCheckSuccess} alt="Success" width={64} height={64} className="mx-auto" />
+                                case 'error': return <Image src={IcXCircle} alt="Error" width={64} height={64} className="mx-auto" />
+                                case 'warning': return <Image src={IconWarning} alt="Warning" width={64} height={64} className="mx-auto" />
                                 case 'other': return icon
                                 default: return null
                             }
@@ -87,23 +88,26 @@ const ModalConfirmCustom = ({
 
     const footerModal = () => {
         return (
-            <ButtonCustom
-                isLoading={isLoading}
-                type="button"
-                text="xác nhận"
-                onClick={() => {
-                    if (isModalReason) {
-                        if (!cancelReason.trim() && isRequiredReason) {
-                            setIsModalReasonEmpty(true);
-                            return
+            <div className="flex items-center justify-end gap-3 w-full">
+                <ButtonCustom
+                    isLoading={isLoading}
+                    type="button"
+                    text="Xác nhận"
+                    className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md font-bold uppercase transition-colors shadow-sm"
+                    onClick={() => {
+                        if (isModalReason) {
+                            if (!cancelReason.trim() && isRequiredReason) {
+                                setIsModalReasonEmpty(true);
+                                return
+                            }
+                            setIsModalReasonEmpty(false);
+                            onConfirm(cancelReason);
+                        } else {
+                            (onConfirm as () => void)();
                         }
-                        setIsModalReasonEmpty(false);
-                        onConfirm(cancelReason);
-                    } else {
-                        (onConfirm as () => void)();
-                    }
-                }}
-            />
+                    }}
+                />
+            </div>
         );
     };
 
