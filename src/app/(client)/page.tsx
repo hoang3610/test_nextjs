@@ -29,7 +29,7 @@ export default async function HomePage() {
 
   return (
     <div className="divide-y divide-gray-200 dark:divide-gray-700 pb-20">
-      
+
       {/* Hero Banner */}
       <div className="bg-blue-900 text-center py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">
@@ -38,7 +38,6 @@ export default async function HomePage() {
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500 dark:text-gray-400">
           Phong cách của bạn, lựa chọn của chúng tôi.
         </p>
-        <Button variant="destructive">Xóa dữ liệu</Button>
       </div>
 
       {/* Danh mục */}
@@ -51,11 +50,11 @@ export default async function HomePage() {
         {featuredProducts.length > 0 && (
           <ProductSection title="Sản phẩm nổi bật" products={featuredProducts} />
         )}
-        
+
         {newProducts.length > 0 && (
           <ProductSection title="Sản phẩm mới" products={newProducts} />
         )}
-        
+
         {flashSaleProducts.length > 0 && (
           <ProductSection title="Flash Sale" products={flashSaleProducts} />
         )}

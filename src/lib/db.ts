@@ -1,20 +1,20 @@
-// src/lib/db.ts
+// lib/db.ts
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.DATABASE_URL;
+const MONGODB_URI = process.env.MONGODB_URI!;
 
 if (!MONGODB_URI) {
-  throw new Error('Vui lòng định nghĩa biến DATABASE_URL trong file .env');
+  throw new Error('Please define the MONGODB_URI environment variable');
 }
 
-// Global cache để tránh tạo nhiều connect khi hot-reload trong Next.js
+// Cache connection để dùng lại giữa các request (Serverless optimization)
 let cached = (global as any).mongoose;
 
 if (!cached) {
   cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
-async function connectDB() {
+async function dbConnect() {
   if (cached.conn) {
     return cached.conn;
   }
@@ -24,11 +24,11 @@ async function connectDB() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       return mongoose;
     });
   }
-  
+
   try {
     cached.conn = await cached.promise;
   } catch (e) {
@@ -39,4 +39,4 @@ async function connectDB() {
   return cached.conn;
 }
 
-export default connectDB;
+export default dbConnect;

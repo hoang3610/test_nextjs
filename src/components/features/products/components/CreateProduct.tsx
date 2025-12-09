@@ -5,10 +5,12 @@ import { Upload, Plus, Trash2, X, ToggleLeft, ToggleRight } from 'lucide-react';
 
 // --- Imports ---
 import { ModalCustom } from '../../../custom/modal-custom';
+import { createSlug } from '@/lib/utils';
+import { ProductRequest } from '../models/request/product';
 
 // --- Interface ---
 interface Attribute {
-  id: string;
+  id: string; // Internal ID for UI List
   name: string;
   values: string[];
 }
@@ -18,33 +20,26 @@ interface ProductVariant {
   price: number;
   stock: number;
   attributes: Record<string, string>;
+  original_price?: number;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price_original: number;
-  import_price?: number;
-  category_id: number;
-  product_type: number;
-  is_app_visible: boolean;
-  skus: {
-    sku: string;
-    dimension_length: number;
-    dimension_width: number;
-    dimension_height: number;
-    weight: number;
-  };
-  images: string;
-  images_mobile: string;
-  short_description: string;
-  description?: string;
-  brand?: string;
+// Map UI Form Data to ProductRequest for submission
+interface ProductFormData extends Partial<ProductRequest> {
+  product_attributes?: Attribute[];
+  variants?: ProductVariant[];
+  // UI specific fields that map to Request fields or are temporary state
+  price?: number;
+  original_price?: number; // Renamed from price_original
   stock?: number;
-  status?: string;
-  has_variants: boolean;
-  product_attributes: Attribute[];
-  variants: ProductVariant[];
+  product_type?: number;
+  images?: string;
+  images_mobile?: string;
+  short_description?: string;
+}
+
+interface Category {
+  _id: string;
+  name: string;
 }
 
 // --- Constants ---
@@ -54,33 +49,28 @@ const PRODUCT_TYPE = {
   HITA: 3,
 };
 
-// --- Mock Data ---
-// TODO: Thay thế bằng dữ liệu thật từ API
-const dataCategories = [
-  { id: 1, name: 'Điện tử' },
-  { id: 2, name: 'Thời trang' },
-  { id: 3, name: 'Nhà cửa' },
-];
-
 // --- Props Interface ---
 interface CreateProductProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (productData: Partial<Product>) => void;
+  onSave: (productData: Partial<ProductFormData>) => void;
+  isViewMode?: boolean; // Added isViewMode
 }
 
-const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }) => {
+const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, isViewMode = false }) => {
   // --- State ---
-  const [formData, setFormData] = useState<Partial<Product>>({
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [formData, setFormData] = useState<Partial<ProductFormData>>({
     name: '',
-    price_original: 0,
-    import_price: 0,
-    category_id: 0,
+    slug: '',
+    original_price: 0,
+    price: 0,
+    category_id: '',
     product_type: PRODUCT_TYPE.PHYSICAL,
-    is_app_visible: false,
-    skus: { sku: '', dimension_length: 0, dimension_width: 0, dimension_height: 0, weight: 0 },
-    images: '',
-    images_mobile: '',
+    is_active: false,
+    images: undefined,
+    images_mobile: undefined,
     short_description: '',
     description: '',
     has_variants: false,
@@ -88,13 +78,70 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
     variants: [],
   });
 
+  // --- Effects ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const response = await fetch('/api/categories?limit=100');
+        if (response.ok) {
+          const result = await response.json();
+          setCategories(result.data || []);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchCategories();
+      // Reset form data when opening
+      setFormData({
+        name: '',
+        slug: '',
+        original_price: 0,
+        price: 0,
+        category_id: '',
+        product_type: PRODUCT_TYPE.PHYSICAL,
+        is_active: false,
+        images: undefined,
+        images_mobile: undefined,
+        short_description: '',
+        description: '',
+        has_variants: false,
+        product_attributes: [],
+        variants: [],
+      });
+    }
+  }, [isOpen]);
+
+  // Auto-generate slug when name changes (only in edit mode/create mode)
+  useEffect(() => {
+    if (!isViewMode && formData.name && !formData.slug) {
+      const generatedSlug = createSlug(formData.name);
+      setFormData(prev => ({ ...prev, slug: generatedSlug }));
+    }
+  }, [formData.name, isViewMode]);
+
   // --- Handlers ---
   const handleSaveClick = () => {
-    onSave(formData);
+    if (isViewMode) return; // Prevent saving in view mode
+    // Final check for slug before saving
+    let finalSlug = formData.slug;
+    if (!finalSlug && formData.name) {
+      finalSlug = createSlug(formData.name);
+    }
+
+    onSave({ ...formData, slug: finalSlug });
     onClose(); // Close modal after saving
   };
 
   const handleAddAttribute = () => {
+    if (isViewMode) return;
     const newAttribute: Attribute = {
       id: Date.now().toString(),
       name: '',
@@ -107,13 +154,16 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
   };
 
   const handleRemoveAttribute = (id: string) => {
+    if (isViewMode) return;
     setFormData(prev => ({
       ...prev,
       product_attributes: (prev.product_attributes || []).filter(attr => attr.id !== id),
+      variants: [] // Clear variants as originally requested
     }));
   };
 
   const handleAttributeChange = (id: string, field: 'name' | 'values', value: string | string[]) => {
+    if (isViewMode) return;
     setFormData(prev => ({
       ...prev,
       product_attributes: (prev.product_attributes || []).map(attr => {
@@ -126,6 +176,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
   };
 
   const handleAddAttributeValue = (id: string, value: string) => {
+    if (isViewMode) return;
     if (!value.trim()) return;
     setFormData(prev => ({
       ...prev,
@@ -139,6 +190,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
   };
 
   const handleRemoveAttributeValue = (id: string, valueToRemove: string) => {
+    if (isViewMode) return;
     setFormData(prev => ({
       ...prev,
       product_attributes: (prev.product_attributes || []).map(attr => {
@@ -147,12 +199,21 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
         }
         return attr;
       }),
+      variants: [] // Clear variants as originally requested
     }));
   };
 
   // Generate variants when attributes change
   useEffect(() => {
-    if (!formData.has_variants || !formData.product_attributes?.length) {
+    if (isViewMode) return;
+
+    // If turning off variants, preserve data (hide only)
+    if (!formData.has_variants) {
+      return;
+    }
+
+    // Only if we are enabled but have no attributes, then clear variants
+    if (!formData.product_attributes?.length) {
       if (formData.variants?.length) {
         setFormData(prev => ({ ...prev, variants: [] }));
       }
@@ -185,41 +246,34 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
       });
 
       // Try to find existing variant to preserve price/stock
-      // 1. Exact match
-      // 2. Partial match (if new variant is a superset of an old variant) - e.g. adding a new attribute
       const existingVariant = formData.variants?.find(v => {
         const vEntries = Object.entries(v.attributes);
         const newEntries = Object.entries(variantAttributes);
-
-        // Check for exact match or if v is a subset of new variant (all props of v exist in new variant with same value)
         return vEntries.every(([key, val]) => variantAttributes[key] === val);
       });
 
       return existingVariant ? {
         ...existingVariant,
-        attributes: variantAttributes, // Ensure we use the new full set of attributes
+        attributes: variantAttributes,
       } : {
         sku: '',
-        price: formData.price_original || 0,
+        price: formData.price || 0,
         stock: 0,
+        original_price: formData.original_price || 0,
         attributes: variantAttributes,
       };
     });
 
-    // Only update if variants have actually changed to avoid infinite loops
-    // Simple check based on length or deep comparison could be added here
-    // For now, we'll just set it. In a real app, use useDeepCompareEffect or similar.
-    // To prevent infinite loop, we check if JSON stringify is different
     if (JSON.stringify(newVariants) !== JSON.stringify(formData.variants)) {
       setFormData(prev => ({ ...prev, variants: newVariants }));
     }
 
-  }, [formData.product_attributes, formData.has_variants, formData.price_original]);
+  }, [formData.product_attributes, formData.has_variants, formData.original_price, isViewMode]);
 
   // --- Render Helpers ---
   const renderField = ({ label, required, field }: any) => (
-    <div className="flex flex-col gap-1 mb-1">
-      <label className="text-sm font-semibold text-gray-700">
+    <div className="flex flex-col gap-1 mb-3">
+      <label className="text-base sm:text-sm font-bold sm:font-semibold text-gray-800 sm:text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {field}
@@ -228,7 +282,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
 
   const renderRowImageUploading = ({ labelName, required, value }: any) => (
     <div className="mt-4">
-      <label className="text-sm font-semibold text-gray-700 mb-2 block">
+      <label className="text-base sm:text-sm font-bold sm:font-semibold text-gray-800 sm:text-gray-700 mb-2 block">
         {labelName} {required && <span className="text-red-500">*</span>}
       </label>
       <div className="flex items-center gap-4">
@@ -239,9 +293,11 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
             <Upload className="text-gray-300" size={24} />
           )}
         </div>
-        <button className="px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded hover:bg-blue-100 flex items-center gap-2 transition-colors">
-          <Upload size={16} /> Tải ảnh lên
-        </button>
+        {!isViewMode && (
+          <button className="px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded hover:bg-blue-100 flex items-center gap-2 transition-colors">
+            <Upload size={16} /> Tải ảnh lên
+          </button>
+        )}
       </div>
     </div>
   );
@@ -262,11 +318,28 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
                   label: 'Tên sản phẩm',
                   field: (
                     <input
+                      disabled={isViewMode}
                       type="text"
                       className="form-input"
                       placeholder="Nhập tên sản phẩm"
                       value={values.name || ''}
                       onChange={(e) => setFormData({ ...values, name: e.target.value })}
+                    />
+                  ),
+                })}
+              </div>
+              <div className="lg:col-span-2">
+                {renderField({
+                  required: false,
+                  label: 'Slug (Đường dẫn)',
+                  field: (
+                    <input
+                      disabled={isViewMode}
+                      type="text"
+                      className="form-input text-gray-500"
+                      placeholder="tu-dong-tao-tu-ten-san-pham"
+                      value={values.slug || ''}
+                      onChange={(e) => setFormData({ ...values, slug: e.target.value })}
                     />
                   ),
                 })}
@@ -277,34 +350,23 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
                   label: 'Danh mục',
                   field: (
                     <select
+                      disabled={isViewMode}
                       className="form-select"
-                      value={values.category_id || 0}
-                      onChange={(e) => setFormData({ ...values, category_id: Number(e.target.value) })}
+                      value={values.category_id || ''}
+                      onChange={(e) => setFormData({ ...values, category_id: e.target.value })}
                     >
-                      <option value={0} disabled>Chọn danh mục</option>
-                      {dataCategories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  ),
-                })}
-              </div>
-              <div className="lg:col-span-1">
-                {renderField({
-                  required: true,
-                  label: 'Loại sản phẩm',
-                  field: (
-                    <select
-                      className="form-select bg-white"
-                      value={values.product_type || 1}
-                      onChange={(e) => setFormData({ ...values, product_type: Number(e.target.value) })}
-                    >
-                      {/* Sử dụng hằng số PRODUCT_TYPE đã định nghĩa */}
-                      <option value={PRODUCT_TYPE.PHYSICAL}>Kéo tỉa</option>
-                      <option value={PRODUCT_TYPE.COURSE}>Kéo cắt</option>
-                      <option value={PRODUCT_TYPE.HITA}>HITA</option>
+                      <option value="" disabled>Chọn danh mục</option>
+                      {isLoadingCategories ? (
+                        <option disabled>Đang tải...</option>
+                      ) : categories.length > 0 ? (
+                        categories.map((category) => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>Không có danh mục nào</option>
+                      )}
                     </select>
                   ),
                 })}
@@ -315,12 +377,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
                   label: 'Giá sản phẩm',
                   field: (
                     <input
+                      disabled={isViewMode || values.has_variants}
                       type="number"
                       className="form-input"
                       placeholder="Nhập giá sản phẩm"
-                      value={values.price_original || 0}
+                      value={values.price || 0}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, price_original: Number(e.target.value) })
+                        setFormData({ ...values, price: Number(e.target.value) })
                       }
                     />
                   ),
@@ -330,12 +394,14 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
                   label: 'Giá nhập',
                   field: (
                     <input
+                      disabled={isViewMode || values.has_variants}
                       type="number"
                       className="form-input"
                       placeholder="Nhập giá nhập"
-                      value={values.import_price || 0}
+                      value={values.original_price || 0}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) =>
-                        setFormData({ ...values, import_price: Number(e.target.value) })
+                        setFormData({ ...values, original_price: Number(e.target.value) })
                       }
                     />
                   ),
@@ -345,10 +411,12 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
                   label: 'Tồn kho',
                   field: (
                     <input
+                      disabled={isViewMode || values.has_variants}
                       type="number"
                       className="form-input"
                       placeholder="Nhập tồn kho"
                       value={values.stock || 0}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) =>
                         setFormData({ ...values, stock: Number(e.target.value) })
                       }
@@ -377,6 +445,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
                 Mô tả sản phẩm
               </label>
               <textarea
+                disabled={isViewMode}
                 className="form-input w-full h-32 resize-none"
                 placeholder="Nhập mô tả sản phẩm..."
                 value={values.description || ''}
@@ -391,7 +460,27 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
             <div className="panel bg-white rounded-lg p-4">
               <label className="text-xl font-bold text-[#1462B0] mb-4 block border-b pb-2">Sản phẩm có nhiều phiên bản?</label>
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 cursor-pointer w-fit" onClick={() => setFormData({ ...values, has_variants: !values.has_variants })}>
+                <div className={`flex items-center gap-2 w-fit ${isViewMode ? 'opacity-60' : 'cursor-pointer'}`} onClick={() => {
+                  if (isViewMode) return;
+                  const newValue = !values.has_variants;
+                  let updatedValues = { ...values, has_variants: newValue };
+
+                  // If turning OFF variants, and we have variants, copy price/stock from the CHEAPEST variant
+                  if (!newValue && values.variants && values.variants.length > 0) {
+                    // Sort by price ascending
+                    const sortedVariants = [...values.variants].sort((a, b) => (a.price || 0) - (b.price || 0));
+                    const cheapestVariant = sortedVariants[0];
+
+                    updatedValues = {
+                      ...updatedValues,
+                      price: cheapestVariant.price || 0,
+                      stock: cheapestVariant.stock || 0,
+                      original_price: cheapestVariant.original_price || values.original_price || 0
+                    };
+                  }
+
+                  setFormData(updatedValues);
+                }}>
                   {values.has_variants ? (
                     <ToggleRight className="text-blue-600" size={40} strokeWidth={1.5} />
                   ) : (
@@ -411,62 +500,71 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
             {values.has_variants && (
               <>
                 <div className="panel bg-white rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4 border-b pb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b pb-2 gap-2">
                     <label className="text-xl font-bold text-[#1462B0]">Thuộc tính & Biến thể</label>
-                    <button
-                      onClick={handleAddAttribute}
-                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      <Plus size={16} /> Thêm nhóm thuộc tính
-                    </button>
+                    {!isViewMode && (
+                      <button
+                        onClick={handleAddAttribute}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium self-start sm:self-auto"
+                      >
+                        <Plus size={16} /> Thêm nhóm thuộc tính
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-4 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                     {values.product_attributes?.map((attr, index) => (
                       <div key={attr.id} className="p-3 bg-gray-50 rounded border border-gray-200 relative">
-                        <button
-                          onClick={() => handleRemoveAttribute(attr.id)}
-                          className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {!isViewMode && (
+                          <button
+                            onClick={() => handleRemoveAttribute(attr.id)}
+                            className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Tên thuộc tính</label>
+                            <label className="text-sm font-bold text-gray-600 mb-1 block">Tên thuộc tính</label>
                             <input
+                              disabled={isViewMode}
                               type="text"
-                              className="form-input bg-white"
+                              className="form-input bg-white h-10 px-3 text-base"
                               placeholder="Ví dụ: Màu sắc, Size..."
                               value={attr.name}
                               onChange={(e) => handleAttributeChange(attr.id, 'name', e.target.value)}
                             />
                           </div>
                           <div>
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Giá trị (Nhấn Enter để thêm)</label>
-                            <div className="form-input bg-white min-h-[38px] flex flex-wrap gap-2 p-1">
+                            <label className="text-sm font-bold text-gray-600 mb-1 block">Giá trị (Nhấn Enter để thêm)</label>
+                            <div className="form-input bg-white min-h-[40px] flex flex-wrap gap-2 p-2">
                               {attr.values.map((val, vIndex) => (
                                 <span key={vIndex} className="bg-yellow-400 text-black text-xs font-medium px-2 py-1 rounded flex items-center gap-1">
                                   {val}
-                                  <button
-                                    onClick={() => handleRemoveAttributeValue(attr.id, val)}
-                                    className="hover:text-red-600 focus:outline-none"
-                                  >
-                                    <X size={12} />
-                                  </button>
+                                  {!isViewMode && (
+                                    <button
+                                      onClick={() => handleRemoveAttributeValue(attr.id, val)}
+                                      className="hover:text-red-600 focus:outline-none"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  )}
                                 </span>
                               ))}
-                              <input
-                                type="text"
-                                className="flex-1 min-w-[100px] outline-none bg-transparent text-sm"
-                                placeholder="Nhập giá trị..."
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleAddAttributeValue(attr.id, e.currentTarget.value);
-                                    e.currentTarget.value = '';
-                                  }
-                                }}
-                              />
+                              {!isViewMode && (
+                                <input
+                                  type="text"
+                                  className="flex-1 min-w-[100px] outline-none bg-transparent text-sm"
+                                  placeholder="Nhập giá trị..."
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddAttributeValue(attr.id, e.currentTarget.value);
+                                      e.currentTarget.value = '';
+                                    }
+                                  }}
+                                />
+                              )}
                             </div>
                           </div>
                         </div>
@@ -484,63 +582,164 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
                 <div className="panel bg-white rounded-lg p-4">
                   <label className="text-xl font-bold text-[#1462B0] mb-4 block border-b pb-2">Danh sách phiên bản (SKU)</label>
                   {values.variants && values.variants.length > 0 ? (
-                    <div className="overflow-x-auto max-h-[300px] overflow-y-auto custom-scrollbar">
-                      <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-3">Phiên bản</th>
-                            <th className="px-4 py-3 w-32">Giá</th>
-                            <th className="px-4 py-3 w-24">Kho</th>
-                            <th className="px-4 py-3 w-32">SKU</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {values.variants.map((variant, index) => (
-                            <tr key={index} className="border-b hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-900">
-                                {Object.values(variant.attributes).join(' - ')}
-                              </td>
-                              <td className="px-4 py-3">
+                    <>
+                      {/* Mobile View: Cards */}
+                      <div className="md:hidden flex flex-col gap-4 max-h-[400px] overflow-y-auto custom-scrollbar p-1">
+                        {values.variants.map((variant, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50 flex flex-col gap-3 shadow-sm">
+                            <div className="font-bold text-gray-800 border-b border-gray-200 pb-2">
+                              {Object.values(variant.attributes).join(' - ')}
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-sm font-bold text-gray-600 mb-1 block">Giá</label>
                                 <input
+                                  disabled={isViewMode}
                                   type="number"
-                                  className="form-input py-1 px-2 h-8"
+                                  className="form-input w-full bg-white h-10 px-3 text-base"
+                                  placeholder="0"
                                   value={variant.price}
+                                  onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
                                     newVariants[index].price = Number(e.target.value);
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
-                              </td>
-                              <td className="px-4 py-3">
+                              </div>
+                              <div>
+                                <label className="text-sm font-bold text-gray-600 mb-1 block">Giá nhập</label>
                                 <input
+                                  disabled={isViewMode}
                                   type="number"
-                                  className="form-input py-1 px-2 h-8"
+                                  className="form-input w-full bg-white h-10 px-3 text-base"
+                                  placeholder="0"
+                                  value={variant.original_price}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => {
+                                    const newVariants = [...values.variants!];
+                                    newVariants[index].original_price = Number(e.target.value);
+                                    setFormData({ ...values, variants: newVariants });
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-sm font-bold text-gray-600 mb-1 block">Kho</label>
+                                <input
+                                  disabled={isViewMode}
+                                  type="number"
+                                  className="form-input w-full bg-white h-10 px-3 text-base"
+                                  placeholder="0"
                                   value={variant.stock}
+                                  onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
                                     const newVariants = [...values.variants!];
                                     newVariants[index].stock = Number(e.target.value);
                                     setFormData({ ...values, variants: newVariants });
                                   }}
                                 />
-                              </td>
-                              <td className="px-4 py-3">
-                                <input
-                                  type="text"
-                                  className="form-input py-1 px-2 h-8"
-                                  value={variant.sku}
-                                  onChange={(e) => {
-                                    const newVariants = [...values.variants!];
-                                    newVariants[index].sku = e.target.value;
-                                    setFormData({ ...values, variants: newVariants });
-                                  }}
-                                />
-                              </td>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-bold text-gray-600 mb-1 block">SKU</label>
+                              <input
+                                disabled={isViewMode}
+                                type="text"
+                                className="form-input w-full bg-white h-10 px-3 text-base"
+                                placeholder="Mã SKU"
+                                value={variant.sku}
+                                onChange={(e) => {
+                                  const newVariants = [...values.variants!];
+                                  newVariants[index].sku = e.target.value;
+                                  setFormData({ ...values, variants: newVariants });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop View: Table */}
+                      <div className="hidden md:block overflow-x-auto max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <table className="w-full text-sm text-left">
+                          <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10">
+                            <tr>
+                              <th className="px-4 py-3 bg-gray-100">Phiên bản</th>
+                              <th className="px-4 py-3 w-32 bg-gray-100">Giá</th>
+                              <th className="px-4 py-3 w-32 bg-gray-100">Giá nhập</th>
+                              <th className="px-4 py-3 w-24 bg-gray-100">Kho</th>
+                              <th className="px-4 py-3 w-32 bg-gray-100">SKU</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody>
+                            {values.variants.map((variant, index) => (
+                              <tr key={index} className="border-b hover:bg-gray-50">
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                  {Object.values(variant.attributes).join(' - ')}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    disabled={isViewMode}
+                                    type="number"
+                                    className="form-input py-1 px-2 h-8 w-full"
+                                    value={variant.price}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => {
+                                      const newVariants = [...values.variants!];
+                                      newVariants[index].price = Number(e.target.value);
+                                      setFormData({ ...values, variants: newVariants });
+                                    }}
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    disabled={isViewMode}
+                                    type="number"
+                                    className="form-input py-1 px-2 h-8 w-full"
+                                    value={variant.original_price}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => {
+                                      const newVariants = [...values.variants!];
+                                      newVariants[index].original_price = Number(e.target.value);
+                                      setFormData({ ...values, variants: newVariants });
+                                    }}
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    disabled={isViewMode}
+                                    type="number"
+                                    className="form-input py-1 px-2 h-8 w-full"
+                                    value={variant.stock}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => {
+                                      const newVariants = [...values.variants!];
+                                      newVariants[index].stock = Number(e.target.value);
+                                      setFormData({ ...values, variants: newVariants });
+                                    }}
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    disabled={isViewMode}
+                                    type="text"
+                                    className="form-input py-1 px-2 h-8 w-full"
+                                    value={variant.sku}
+                                    onChange={(e) => {
+                                      const newVariants = [...values.variants!];
+                                      newVariants[index].sku = e.target.value;
+                                      setFormData({ ...values, variants: newVariants });
+                                    }}
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   ) : (
                     <div className="text-center py-8 text-gray-500 italic">
                       Vui lòng thêm thuộc tính và giá trị để tạo phiên bản.
@@ -560,10 +759,15 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
             font-size: 0.875rem;
             outline: none;
             transition: border-color 0.15s ease-in-out;
+            background-color: ${isViewMode ? '#f8fafc' : 'white'};
           }
           .form-input:focus, .form-select:focus {
             border-color: #3b82f6;
             box-shadow: 0 0 0 1px #3b82f6;
+          }
+          .form-input:disabled, .form-select:disabled {
+            background-color: #f8fafc;
+            color: #94a3b8;
           }
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -583,17 +787,19 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
         `}</style>
       </div>
     );
-  }, [formData, setFormData]);
+  }, [formData, setFormData, categories, isLoadingCategories, isViewMode]);
 
   // --- Render Modal Footer ---
   const renderModalFooter = () => (
     <>
       <button onClick={onClose} className="px-6 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition-colors">
-        Hủy bỏ
+        {isViewMode ? 'Đóng' : 'Hủy bỏ'}
       </button>
-      <button onClick={handleSaveClick} className="px-6 py-2 bg-[#1462B0] text-white font-medium rounded hover:bg-[#104e8b] transition-colors shadow-sm">
-        Tạo sản phẩm
-      </button>
+      {!isViewMode && (
+        <button onClick={handleSaveClick} className="px-6 py-2 bg-[#1462B0] text-white font-medium rounded hover:bg-[#104e8b] transition-colors shadow-sm">
+          Tạo sản phẩm
+        </button>
+      )}
     </>
   );
 
@@ -601,7 +807,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave }
     <ModalCustom
       isOpen={isOpen}
       onClose={onClose}
-      titleModal="TẠO MỚI SẢN PHẨM"
+      titleModal={isViewMode ? "CHI TIẾT SẢN PHẨM" : "TẠO MỚI SẢN PHẨM"}
       modalSize="90%"
       bodyModal={renderModalBody()}
       footerModal={renderModalFooter()}

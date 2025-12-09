@@ -1,26 +1,27 @@
 'use client';
 
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  ShoppingCart, 
-  Settings, 
-  Package, 
-  FileText 
+import {
+  LayoutDashboard,
+  Users,
+  ShoppingCart,
+  Settings,
+  Package,
+  FileText
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { SidebarProvider, useSidebar } from '@/context/SidebarContext'; // Import Context
 import AdminHeader from '@/components/layout/admin/AdminHeader';
 import AdminSidebar, { MenuItem, SidebarTheme } from '@/components/layout/admin/AdminSidebar';
+import ReusableToast from '@/components/custom/custom-toast';
 
 // --- 1. Inner Component (Nơi chứa logic giao diện chính) ---
 const AdminLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const { theme } = useTheme();
-  
+
   // Lấy state isCollapsed để tính toán padding cho main content
   const { isCollapsed } = useSidebar();
-  
+
   const isDark = theme === 'dark';
 
   // Định nghĩa Theme cho Sidebar dựa trên Dark/Light mode hiện tại
@@ -47,15 +48,16 @@ const AdminLayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      
+      <ReusableToast />
+
       {/* 1. Sidebar (Fixed Left - Z-index 50) */}
       <AdminSidebar
         items={menuItems}
         theme={sidebarTheme}
         header={
-           <span className="text-xl font-bold tracking-wide">
-             HoangGia<span className="text-blue-600">Admin</span>
-           </span>
+          <span className="text-xl font-bold tracking-wide">
+            HoangGia<span className="text-blue-600">Admin</span>
+          </span>
         }
       />
 
@@ -63,7 +65,7 @@ const AdminLayoutContent = ({ children }: { children: React.ReactNode }) => {
       <AdminHeader />
 
       {/* 3. Main Content (Scrollable) */}
-      <main 
+      <main
         className={`
           flex-1 
           pt-20 /* Padding Top = Header Height (16) + Gap (4) */

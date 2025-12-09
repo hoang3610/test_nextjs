@@ -1,114 +1,217 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // --- Imports ---
 import Createcategory from '../components/CreateCategory';
 import Editcategory from '../components/EditCategory';
-import { Category, CategoryPayload } from '../data/categories';
 import TableCategory from '../components/TableCategory';
-import CreateCategory from '../components/CreateCategory';
+import { Category, CategoryPayload } from '../data/categories';
 
-// --- Mock Data ---
-const initialCategories: Category[] = [
-  {
-    id: 1,
-    name: 'Áo',
-    code: `A1`,
-    is_app_visible: true
-  },
-  {
-    id: 2,
-    name: 'Quần',
-    code: `A1`,
-    is_app_visible: false,
-    description: "Quần dài"
-  },
-  {
-    id: 3,
-    name: 'Váy',
-    code: `A1`,
-    is_app_visible: true
-  }
-  // ... more mock data if needed
-];
+import { showToast } from '@/components/custom/custom-toast';
 
 const CategoryIndexPage = () => {
   // --- State ---
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Partial<Category> | null>(null);
   const [isViewMode, setViewMode] = useState(false);
-  const itemsPerPage = 2;
+
+  const itemsPerPage = 10; // Default limit
+
+  // --- Data Fetching ---
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+      });
+
+      const response = await fetch(`/api/categories?${params.toString()}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        // Map API data to our Frontend Interface
+        const mappedCategories: Category[] = data.data.map((item: any) => ({
+          id: item._id,
+          name: item.name,
+          slug: item.slug,
+          description: item.description,
+          is_active: item.is_active,
+          image: item.image_url || 'https://placehold.co/40', // Fallback image
+          parent_id: item.parent_id
+        }));
+
+        setCategories(mappedCategories);
+        setTotalItems(data.pagination.total);
+      } else {
+        console.error("Failed to fetch categories:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // --- Helper: Fetch Detail ---
+  const fetchCategoryDetail = async (id: string): Promise<Category | null> => {
+    try {
+      const response = await fetch(`/api/categories/${id}/detail`);
+      const data = await response.json();
+
+      if (response.ok) {
+        // Map API response to Frontend Interface
+        return {
+          id: data._id,
+          name: data.name,
+          slug: data.slug,
+          description: data.description,
+          is_active: data.is_active,
+          image: data.image_url,
+          // parent_id handling if needed
+        };
+      } else {
+        console.error("Failed to fetch category detail:", data.error);
+        alert("Không thể lấy thông tin chi tiết danh mục.");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching category detail:", error);
+      alert("Lỗi kết nối khi lấy chi tiết danh mục.");
+      return null;
+    }
+  };
+
 
   // --- Handlers ---
   const handleCreate = () => {
     setCreateModalOpen(true);
   };
 
-  const handleSaveNewCategory = (newCategory: CategoryPayload) => {
-    const fullCategory: Category = {
-      id: Date.now(), 
-      name: newCategory.name || '',
-      code: newCategory.code || '',
-      description: newCategory.description || '',
-      is_app_visible: newCategory.is_app_visible === 1,
-    } as Category;
-    setCategories([fullCategory, ...categories]);
+  const handleSaveNewCategory = async (newCategory: CategoryPayload) => {
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCategory),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast({ message: "Tạo danh mục thành công!", type: "success" })
+        // Success
+        setCreateModalOpen(false);
+        fetchCategories(); // Refresh data
+      } else {
+        showToast({ message: `Lỗi khi tạo danh mục: ${data.error}`, type: "error" })
+      }
+    } catch (error) {
+      console.error("Error creating category:", error);
+      showToast({ message: "Đã xảy ra lỗi khi tạo danh mục.", type: "error" })
+    }
   };
 
-  const handleView = (category: Category) => {
+  const handleView = async (category: Category) => {
+    // Optimistic set from table
     setSelectedCategory(category);
     setViewMode(true);
     setEditModalOpen(true);
+
+    // Update with fresh data
+    const detailedCategory = await fetchCategoryDetail(category.id);
+    if (detailedCategory) {
+      setSelectedCategory(detailedCategory);
+    }
   };
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = async (category: Category) => {
+    // Optimistic set from table
     setSelectedCategory(category);
     setViewMode(false);
     setEditModalOpen(true);
+
+    // Update with fresh data
+    const detailedCategory = await fetchCategoryDetail(category.id);
+    if (detailedCategory) {
+      setSelectedCategory(detailedCategory);
+    }
   };
 
-  const handleSaveEditedCategory = (editedCategory: CategoryPayload) => {
-    setCategories(categories.map((p) => (p.id === editedCategory.id ? { ...p, ...editedCategory, is_app_visible: editedCategory.is_app_visible === 1 } : p)));
-  };
+  const handleSaveEditedCategory = async (editedCategory: CategoryPayload) => {
+    if (!editedCategory.id) {
+      alert("Lỗi: Không tìm thấy ID danh mục cần sửa.");
+      return;
+    }
 
-  const paginatedCategories = useMemo(() => {
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      return categories.slice(startIndex, startIndex + itemsPerPage);
-    }, [categories, currentPage, itemsPerPage]);
+    try {
+      const response = await fetch(`/api/categories/${editedCategory.id}/update`, {
+        method: 'POST', // User requested behavior/Existing API method
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editedCategory),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success
+        setEditModalOpen(false);
+        fetchCategories(); // Refresh data
+        showToast({ message: "Cập nhật danh mục thành công!", type: "success" })
+      } else {
+        showToast({ message: `Lỗi khi cập nhật: ${data.error}`, type: "error" })
+      }
+    } catch (error) {
+      console.error("Error updating category:", error);
+      showToast({ message: "Đã xảy ra lỗi khi cập nhật danh mục.", type: "error" })
+    }
+  };
 
   const handleCloseModals = () => {
     setCreateModalOpen(false);
-    // setEditModalOpen(false);
+    setEditModalOpen(false);
     setSelectedCategory(null);
   };
 
   return (
     <>
       <TableCategory
-          categories={paginatedCategories}
-          currentPage={currentPage}
-          totalItems={categories.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onCreate={handleCreate}
-          onView={handleView}
-          onEdit={handleEdit}
-        />
-      <CreateCategory
+        categories={categories}
+        currentPage={currentPage}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onCreate={handleCreate}
+        onView={handleView}
+        onEdit={handleEdit}
+      />
+
+      <Createcategory
         isOpen={isCreateModalOpen}
         onClose={handleCloseModals}
-        onSave={handleSaveNewCategory}
+        onSave={handleSaveNewCategory as any}
       />
       {selectedCategory && (
         <Editcategory
           isOpen={isEditModalOpen}
           onClose={handleCloseModals}
-          onSave={handleSaveEditedCategory}
-          categoryData={selectedCategory}
+          onSave={handleSaveEditedCategory as any}
+          categoryData={selectedCategory as any}
           isViewMode={isViewMode}
         />
       )}

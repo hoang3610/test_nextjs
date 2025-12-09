@@ -6,7 +6,16 @@ import { Plus } from 'lucide-react';
 // --- Imports ---
 import { Table, Column } from '../../../custom/table';
 import { ActionButtons } from '../../../custom/action-button';
-import { Category } from '../data/categories';
+
+// Define interface locally to match the structure passed from page
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  is_active: boolean;
+  image?: string;
+}
 
 // --- Props Interface ---
 interface TableCategoryProps {
@@ -30,17 +39,14 @@ const TableCategory: React.FC<TableCategoryProps> = ({
   onView,
   onEdit,
 }) => {
-  // --- Helpers ---
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
-
   // --- Columns ---
   const columns: Column<Category>[] = [
     {
-      header: 'Sản phẩm',
+      header: 'Tên danh mục',
       className: 'min-w-[250px]',
       render: (item) => (
         <div className="flex items-center gap-3">
+          <img src={item.image || 'https://placehold.co/40'} alt={item.name} className="w-10 h-10 rounded object-cover bg-gray-100" />
           <div>
             <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
           </div>
@@ -48,18 +54,29 @@ const TableCategory: React.FC<TableCategoryProps> = ({
       ),
     },
     {
-      header: 'Code',
+      header: 'Slug', // Changed from "Mã danh mục"
       className: 'min-w-[120px]',
-      render: (item) => <div className="flex items-center gap-3">
+      render: (item) => (
+        <div className="flex items-center gap-3">
           <div>
-            <p className="font-semibold text-gray-800 text-sm">{item.code}</p>
+            <p className="font-semibold text-gray-800 text-sm">{item.slug}</p>
           </div>
         </div>
+      ),
+    },
+    {
+      header: 'Trạng thái',
+      className: 'min-w-[120px]',
+      render: (item) => (
+        <span className={`px-2 py-1 text-xs rounded-full ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {item.is_active ? 'Hoạt động' : 'Ẩn'}
+        </span>
+      ),
     },
     {
       header: 'Hành động',
       className: 'text-right w-[120px]',
-      render: (item) => <ActionButtons onView={() => onView(item)} onEdit={() => onEdit(item)}/>,
+      render: (item) => <ActionButtons onView={() => onView(item)} onEdit={() => onEdit(item)} />,
     },
   ];
 

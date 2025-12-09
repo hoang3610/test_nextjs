@@ -1,20 +1,20 @@
 export interface Category {
-  id: number;
-  code: string;
+  id: string; // Changed to string to match Mongo ID
   name: string;
+  slug: string; // Renamed from code
   description?: string;
   image?: string;
-  is_app_visible: boolean;
+  is_active: boolean; // Renamed from is_app_visible
 }
 
 // Định nghĩa thêm Interface cho Payload gửi đi
 export interface CategoryPayload {
-  name?: string;
-  code?: string;
+  name: string;
+  slug?: string;
   description?: string;
   image?: string;
-  is_app_visible: number;
-  id?: number;
+  is_active: boolean;
+  id?: string;
 }
 
 const categoryNames = [
@@ -24,19 +24,19 @@ const categoryNames = [
   'Ví Da Nam Nhỏ Gọn', 'Thắt Lưng Da Bò', 'Áo Hoodie Nỉ Bông', 'Quần Jogger Thể Thao'
 ];
 
-const generateProducts = (count: number): Category[] => {
+const generateCategories = (count: number): Category[] => {
   const categories: Category[] = [];
   for (let i = 1; i <= count; i++) {
     const name = categoryNames[Math.floor(Math.random() * categoryNames.length)];
-    const code = categoryNames[Math.floor(Math.random() * categoryNames.length)];
+    const slug = name.toLowerCase().replace(/ /g, '-') + `-${i}`;
     categories.push({
-      id: i,
+      id: i.toString(),
       name: `${name} #${i}`,
-      code: code,
-      is_app_visible: false,
+      slug: slug,
+      is_active: Math.random() > 0.5,
     });
   }
   return categories;
 };
 
-export const mockProducts: Category[] = generateProducts(50);
+export const mockProducts: Category[] = generateCategories(50);

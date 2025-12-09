@@ -5,22 +5,15 @@ import { Upload } from 'lucide-react';
 
 // --- Imports ---
 import { ModalCustom } from '../../../custom/modal-custom';
-import { Category, CategoryPayload } from '../data/categories';
 
-// --- Constants ---
-const PRODUCT_TYPE = {
-  PHYSICAL: 1,
-  COURSE: 2,
-  HITA: 3,
-};
-
-// --- Mock Data ---
-// TODO: Thay thế bằng dữ liệu thật từ API
-const dataCategories = [
-  { id: 1, name: 'Điện tử' },
-  { id: 2, name: 'Thời trang' },
-  { id: 3, name: 'Nhà cửa' },
-];
+// --- Interface ---
+interface CategoryPayload {
+  name: string;
+  slug: string;
+  is_active: boolean;
+  description?: string;
+  image?: string;
+}
 
 // --- Props Interface ---
 interface CreateCategoryProps {
@@ -31,23 +24,33 @@ interface CreateCategoryProps {
 
 const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave }) => {
   // --- State ---
-  const [formData, setFormData] = useState<Partial<Category>>({
+  const [formData, setFormData] = useState<Partial<CategoryPayload>>({
     name: '',
-    code: '',
-    is_app_visible: false,
+    slug: '',
+    is_active: true,
     description: '',
     image: '',
   });
 
   // --- Handlers ---
   const handleSaveClick = () => {
-    // Tạo payload để gửi đi, chuyển đổi boolean thành number
-    const payload = {
-      ...formData,
-      is_app_visible: formData.is_app_visible ? 1 : 0,
+    // Basic validation
+    if (!formData.name) {
+      alert('Tên danh mục là bắt buộc');
+      return;
+    }
+
+    const payload: CategoryPayload = {
+      name: formData.name,
+      slug: formData.slug || '', // server will generate if empty, but interface expects string
+      is_active: formData.is_active || false,
+      description: formData.description,
+      image: formData.image
     };
     onSave(payload);
-    onClose(); // Close modal after saving
+    onClose();
+    // Reset form? Optional.
+    setFormData({ name: '', slug: '', is_active: true, description: '', image: '' });
   };
 
   // --- Render Helpers ---
@@ -84,9 +87,9 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
   const renderModalBody = useCallback(() => {
     const values = formData;
     return (
-      <div className="relative space-y-5 p-1 pr-2">
+      <div className="relative space-y-5 p-1 pr-2 max-w-5xl mx-auto">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Left Column: Product Info */}
+          {/* Left Column: Info */}
           <div className="panel bg-white rounded-lg col-span-2">
             <label className="text-xl font-bold text-[#1462B0] mb-4 block border-b pb-2">Thông tin danh mục</label>
             <div className="grid grid-cols-1 gap-y-3 gap-x-4 lg:grid-cols-3">
@@ -107,25 +110,31 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
               </div>
               <div className="lg:col-span-1">
                 {renderField({
-                  required: true,
-                  label: 'Mã danh mục',
+                  required: false,
+                  label: 'Slug (Mã danh mục)',
                   field: (
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="Nhập mã danh mục"
-                      value={values.code || ''}
-                      onChange={(e) => setFormData({ ...values, code: e.target.value })}
+                      placeholder="Tự động tạo nếu để trống"
+                      value={values.slug || ''}
+                      onChange={(e) => setFormData({ ...values, slug: e.target.value })}
                     />
                   ),
                 })}
               </div>
               <div className="lg:col-span-1">
                 {renderField({
-                  label: 'Hiển thị trên mobile',
+                  label: 'Trạng thái hoạt động',
                   field: (
-                    <div className="h-[38px] flex items-center">
-                      <input type="checkbox" className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" checked={values.is_app_visible || false} onChange={(e) => setFormData({ ...values, is_app_visible: e.target.checked })} />
+                    <div className="h-[38px] flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        checked={values.is_active || false}
+                        onChange={(e) => setFormData({ ...values, is_active: e.target.checked })}
+                      />
+                      <span className="text-sm text-gray-700">Hoạt động</span>
                     </div>
                   ),
                 })}
@@ -133,7 +142,7 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
               <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="lg:col-span-1">
                   {renderRowImageUploading({
-                    required: true,
+                    required: false,
                     labelName: "Hình ảnh",
                     value: values.image,
                     name: "image"
@@ -141,7 +150,7 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
                 </div>
                 <div className="lg:col-span-2">
                   {renderField({
-                    label: 'Mô tả trên mobile',
+                    label: 'Mô tả',
                     field: (
                       <textarea
                         className="form-input h-24 resize-none"
@@ -192,7 +201,7 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
       isOpen={isOpen}
       onClose={onClose}
       titleModal="TẠO MỚI DANH MỤC"
-      modalSize="50%"
+      modalSize="90%"
       bodyModal={renderModalBody()}
       footerModal={renderModalFooter()}
       centered

@@ -6,29 +6,8 @@ import { Plus } from 'lucide-react';
 // --- Imports ---
 import { Table, Column } from '../../../custom/table';
 import { ActionButtons } from '../../../custom/action-button';
+import { ProductResponse as Product, ProductSkuResponse as ProductSku } from '../models/response/product';
 
-// --- Interface ---
-interface Product {
-  id: string;
-  name: string;
-  price_original: number;
-  category_id: number;
-  product_type: number;
-  is_app_visible: boolean;
-  skus: {
-    sku: string;
-    dimension_length: number;
-    dimension_width: number;
-    dimension_height: number;
-    weight: number;
-  };
-  images: string;
-  images_mobile: string;
-  short_description: string;
-  brand?: string;
-  stock?: number;
-  status?: string;
-}
 
 // --- Props Interface ---
 interface TableProductProps {
@@ -63,10 +42,15 @@ const TableProduct: React.FC<TableProductProps> = ({
       className: 'min-w-[250px]',
       render: (item) => (
         <div className="flex items-center gap-3">
-          <img src={item.images} alt={item.name} className="w-10 h-10 rounded object-cover bg-gray-100" />
+          <img
+            src={item.thumbnail_url || 'https://placehold.co/40'}
+            alt={item.name}
+            className="w-10 h-10 rounded object-cover bg-gray-100"
+          />
           <div>
             <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
-            <p className="text-xs text-gray-500">{item.skus?.sku}</p>
+            {/* Display first SKU as a representative if available */}
+            <p className="text-xs text-gray-500">{item.skus?.[0]?.sku}</p>
           </div>
         </div>
       ),
@@ -74,7 +58,21 @@ const TableProduct: React.FC<TableProductProps> = ({
     {
       header: 'Giá bán',
       className: 'min-w-[120px]',
-      render: (item) => <div className="font-medium text-gray-700">{formatCurrency(item.price_original)}</div>,
+      render: (item) => {
+        // Display price of first SKU or a range if variants exist? 
+        // For simplicity, showing first SKU price
+        const price = item.skus?.[0]?.price || 0;
+        return <div className="font-medium text-gray-700">{formatCurrency(price)}</div>;
+      },
+    },
+    {
+      header: 'Trạng thái',
+      className: 'min-w-[120px]',
+      render: (item) => (
+        <span className={`px-2 py-1 text-xs rounded-full ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {item.is_active ? 'Hoạt động' : 'Ẩn'}
+        </span>
+      ),
     },
     {
       header: 'Hành động',

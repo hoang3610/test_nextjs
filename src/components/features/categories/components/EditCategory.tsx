@@ -44,8 +44,8 @@ const EditCategory: React.FC<EditCategoryProps> = ({ isOpen, onClose, onSave, ca
   const handleSaveClick = () => {
     const payload = {
       ...formData,
-      is_app_visible: formData.is_app_visible ? 1 : 0,
-    };
+      is_active: formData.is_active || false,
+    } as CategoryPayload;
     onSave(payload);
     onClose();
   };
@@ -87,32 +87,32 @@ const EditCategory: React.FC<EditCategoryProps> = ({ isOpen, onClose, onSave, ca
             <div className="lg:col-span-1">
               {renderField({
                 required: true,
-                label: 'Mã danh mục',
+                label: 'Slug danh mục',
                 field: (
                   <input
                     disabled={isViewMode}
                     type="text"
                     className="form-input"
-                    placeholder="Nhập mã danh mục"
-                    value={values.code || ''}
-                    onChange={(e) => setFormData({ ...values, code: e.target.value })}
+                    placeholder="Nhập slug danh mục"
+                    value={values.slug || ''}
+                    onChange={(e) => setFormData({ ...values, slug: e.target.value })}
                   />
                 ),
               })}
             </div>
             <div className="lg:col-span-1">
               {renderField({
-                label: 'Hiển thị trên mobile',
+                label: 'Trạng thái hoạt động',
                 field: (
                   <div className="h-[38px] flex items-center">
-                    <input disabled={isViewMode} type="checkbox" className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" checked={values.is_app_visible || false} onChange={(e) => setFormData({ ...values, is_app_visible: e.target.checked })} />
+                    <input disabled={isViewMode} type="checkbox" className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" checked={values.is_active || false} onChange={(e) => setFormData({ ...values, is_active: e.target.checked })} />
                   </div>
                 ),
               })}
             </div>
             <div className="lg:col-span-3">
               {renderField({
-                label: 'Mô tả trên mobile',
+                label: 'Mô tả',
                 field: (
                   <textarea
                     disabled={isViewMode}
