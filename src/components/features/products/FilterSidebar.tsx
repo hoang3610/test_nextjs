@@ -1,13 +1,5 @@
 import React from 'react';
 
-// Lấy danh sách danh mục từ tên sản phẩm gốc để mock data
-const categories = [
-  'Tất cả', 'Áo Thun', 'Quần Jeans', 'Giày Sneaker', 'Mũ Lưỡi Trai',
-  'Balo', 'Đồng Hồ', 'Áo Sơ Mi', 'Kính Mát',
-  'Áo Khoác', 'Quần Kaki', 'Giày Lười', 'Túi Đeo Chéo',
-  'Ví Da', 'Thắt Lưng', 'Áo Hoodie', 'Quần Jogger'
-];
-
 export interface Filters {
   searchTerm: string;
   category: string;
@@ -19,6 +11,23 @@ interface FilterSidebarProps {
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) => {
+  const [categories, setCategories] = React.useState<string[]>(['Tất cả']);
+
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories?is_active=true&limit=100');
+        if (res.ok) {
+          const data = await res.json();
+          const categoryNames = data.data.map((cat: any) => cat.name);
+          setCategories(['Tất cả', ...categoryNames]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters(prev => ({ ...prev, searchTerm: e.target.value }));
@@ -49,17 +58,16 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
         <div>
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Danh mục</h3>
           <ul className="space-y-2">
-            {categories.map((cat) => (
-              <li key={cat}>
+            {categories.map((category) => (
+              <li key={category}>
                 <button
-                  onClick={() => handleCategoryClick(cat)}
-                  className={`w-full text-left px-3 py-1 rounded-md transition-colors text-gray-700 dark:text-gray-300 ${
-                    (filters.category === cat || (filters.category === '' && cat === 'Tất cả'))
-                      ? 'bg-blue-100 dark:bg-blue-900 font-semibold'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  onClick={() => handleCategoryClick(category)}
+                  className={`w-full text-left px-3 py-1 rounded-md transition-colors text-gray-700 dark:text-gray-300 ${(filters.category === category || (filters.category === '' && category === 'Tất cả'))
+                    ? 'bg-blue-100 dark:bg-blue-900 font-semibold'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
                 >
-                  {cat}
+                  {category}
                 </button>
               </li>
             ))}

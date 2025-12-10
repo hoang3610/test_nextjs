@@ -6,16 +6,7 @@ import { Plus } from 'lucide-react';
 // --- Imports ---
 import { Table, Column } from '../../../custom/table';
 import { ActionButtons } from '../../../custom/action-button';
-
-// Define interface locally to match the structure passed from page
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  is_active: boolean;
-  image?: string;
-}
+import { Category } from '../models'; // Import shared model
 
 // --- Props Interface ---
 interface TableCategoryProps {
@@ -50,7 +41,7 @@ const TableCategory: React.FC<TableCategoryProps> = ({
       className: 'min-w-[250px]',
       render: (item) => (
         <div className="flex items-center gap-3">
-          <img src={item.image || 'https://placehold.co/40'} alt={item.name} className="w-10 h-10 rounded object-cover bg-gray-100" />
+          <img src={item.image_url || 'https://placehold.co/40'} alt={item.name} className="w-10 h-10 rounded object-cover bg-gray-100" />
           <div>
             <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
           </div>

@@ -3,10 +3,10 @@ import type { NextConfig } from "next";
 // Đổi ": NextConfig" thành ": any" để bypass lỗi kiểm tra kiểu
 const nextConfig: any = {
   /* config options here */
-  
+
   // Lưu ý: reactCompiler thường nằm trong experimental ở các bản Next.js mới
   // Nếu dòng này không lỗi thì bạn cứ giữ nguyên
-  reactCompiler: true, 
+  reactCompiler: true,
 
   images: {
     remotePatterns: [
@@ -14,9 +14,17 @@ const nextConfig: any = {
         protocol: 'https',
         hostname: 'picsum.photos',
       },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
-  
+
   // Bây giờ thêm đoạn này sẽ không bị lỗi nữa
   eslint: {
     ignoreDuringBuilds: true,

@@ -45,6 +45,6 @@ export interface ProductResponse {
     price?: number;
     original_price?: number; // Renamed from price_original
     stock?: number;
-    images?: string; // Sometimes APIs return comma separated or array
-    images_mobile?: string;
+    images?: string[];
+    images_mobile?: string[];
 }

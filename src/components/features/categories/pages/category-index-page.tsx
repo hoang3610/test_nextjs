@@ -7,7 +7,8 @@ import Createcategory from '../components/CreateCategory';
 import Editcategory from '../components/EditCategory';
 import TableCategory from '../components/TableCategory';
 import ModalConfirmCustom from '@/components/custom/modal-confirm-custom';
-import { Category, CategoryPayload } from '../data/categories';
+import { Category } from '../models'; // Import shared model
+import { CategoryRequest } from '../models/request';
 
 import { showToast } from '@/components/custom/custom-toast';
 
@@ -58,7 +59,7 @@ const CategoryIndexPage = () => {
           slug: item.slug,
           description: item.description,
           is_active: item.is_active,
-          image: item.image_url || 'https://placehold.co/40', // Fallback image
+          image_url: item.image_url || 'https://placehold.co/40', // Fallback image
           parent_id: item.parent_id
         }));
 
@@ -92,7 +93,7 @@ const CategoryIndexPage = () => {
           slug: data.slug,
           description: data.description,
           is_active: data.is_active,
-          image: data.image_url,
+          image_url: data.image_url,
           // parent_id handling if needed
         };
       } else {
@@ -112,7 +113,7 @@ const CategoryIndexPage = () => {
     setCreateModalOpen(true);
   };
 
-  const handleSaveNewCategory = async (newCategory: CategoryPayload) => {
+  const handleSaveNewCategory = async (newCategory: CategoryRequest) => {
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
@@ -200,7 +201,14 @@ const CategoryIndexPage = () => {
           showToast({ message: `Xóa danh mục thất bại: ${data.error}`, type: "error" });
         }
       } else if (type === 'CHANGE_STATUS') {
-        const response = await fetch(`/api/categories/${category.id}/change-status`);
+        const newStatus = !category.is_active; // Toggle status
+        const response = await fetch(`/api/categories/${category.id}/change-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_active: newStatus }),
+        });
         if (response.ok) {
           showToast({ message: "Thay đổi trạng thái danh mục thành công!", type: "success" });
           fetchCategories();
@@ -217,7 +225,7 @@ const CategoryIndexPage = () => {
     }
   };
 
-  const handleSaveEditedCategory = async (editedCategory: CategoryPayload) => {
+  const handleSaveEditedCategory = async (editedCategory: CategoryRequest & { id?: string }) => {
     if (!editedCategory.id) {
       alert("Lỗi: Không tìm thấy ID danh mục cần sửa.");
       return;
@@ -272,13 +280,13 @@ const CategoryIndexPage = () => {
       <Createcategory
         isOpen={isCreateModalOpen}
         onClose={handleCloseModals}
-        onSave={handleSaveNewCategory as any}
+        onSave={handleSaveNewCategory}
       />
       {selectedCategory && (
         <Editcategory
           isOpen={isEditModalOpen}
           onClose={handleCloseModals}
-          onSave={handleSaveEditedCategory as any}
+          onSave={handleSaveEditedCategory}
           categoryData={selectedCategory as any}
           isViewMode={isViewMode}
         />

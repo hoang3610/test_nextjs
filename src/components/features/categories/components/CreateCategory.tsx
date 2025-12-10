@@ -5,31 +5,29 @@ import { Upload } from 'lucide-react';
 
 // --- Imports ---
 import { ModalCustom } from '../../../custom/modal-custom';
-
-// --- Interface ---
-interface CategoryPayload {
-  name: string;
-  slug: string;
-  is_active: boolean;
-  description?: string;
-  image?: string;
-}
+import { CategoryRequest } from '../models/request';
+import ImageUploading, { ErrorsType, ImageListType } from 'react-images-uploading';
+import { ButtonCustom } from '@/components/custom/button-custom';
+import { showToast } from '@/components/custom/custom-toast';
+import IconEdit from '@/components/icons/icon-edit';
+import IconX from '@/components/icons/icon-x';
+import ImageCustom from '@/components/custom/image-custom';
 
 // --- Props Interface ---
 interface CreateCategoryProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (categoryData: CategoryPayload) => void;
+  onSave: (categoryData: CategoryRequest) => void;
 }
 
 const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave }) => {
   // --- State ---
-  const [formData, setFormData] = useState<Partial<CategoryPayload>>({
+  const [formData, setFormData] = useState<Partial<CategoryRequest>>({
     name: '',
     slug: '',
     is_active: true,
     description: '',
-    image: '',
+    image_url: '',
   });
 
   // --- Handlers ---
@@ -40,17 +38,17 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
       return;
     }
 
-    const payload: CategoryPayload = {
+    const payload: CategoryRequest = {
       name: formData.name,
       slug: formData.slug || '', // server will generate if empty, but interface expects string
       is_active: formData.is_active || false,
       description: formData.description,
-      image: formData.image
+      image_url: formData.image_url
     };
     onSave(payload);
     onClose();
     // Reset form? Optional.
-    setFormData({ name: '', slug: '', is_active: true, description: '', image: '' });
+    setFormData({ name: '', slug: '', is_active: true, description: '', image_url: '' });
   };
 
   // --- Render Helpers ---
@@ -63,25 +61,93 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
     </div>
   );
 
-  const renderRowImageUploading = ({ labelName, required, value }: any) => (
-    <div className="mt-0">
-      <label className="text-sm font-semibold text-gray-700 mb-2 block">
-        {labelName} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="flex items-center gap-4">
-        <div className="w-24 h-24 rounded-lg bg-gray-50 border border-gray-300 flex items-center justify-center overflow-hidden relative group shrink-0">
-          {value ? (
-            <img src={value} className="w-full h-full object-cover" alt="Preview" />
-          ) : (
-            <Upload className="text-gray-300" size={24} />
+  const renderRowImageUploading = ({ labelName, required, value }: any) => {
+    // value is string | undefined from formData.
+    const images: ImageListType = value ? [{ data_url: value }] : [];
+
+    const onChange = (imageList: ImageListType) => {
+      // Extract the data_url to save back to string
+      const newValue = imageList.length > 0 ? imageList[0].data_url : '';
+      setFormData(prev => ({ ...prev, image_url: newValue }));
+    };
+
+    return (
+      <div className="mt-4 w-full">
+        <label className="text-base sm:text-sm font-bold sm:font-semibold text-gray-800 sm:text-gray-700 mb-2 block">
+          {labelName} {required && <span className="text-red-500">*</span>}
+        </label>
+        <ImageUploading
+          multiple={false}
+          value={images}
+          onChange={onChange}
+          maxNumber={1}
+          dataURLKey="data_url"
+          acceptType={['jpg', 'png', 'jpeg', 'webp']}
+          onError={(errors: ErrorsType) => {
+            if (errors?.maxNumber) showToast({ message: "Chỉ được chọn tối đa 1 ảnh", type: "warning" });
+            if (errors?.acceptType) showToast({ message: "Chỉ được phép tải lên ảnh", type: "warning" });
+            if (errors?.maxFileSize) showToast({ message: "Dung lượng ảnh quá lớn", type: "warning" });
+          }}
+        >
+          {({
+            imageList,
+            onImageUpload,
+            onImageUpdate,
+            onImageRemove,
+            isDragging,
+            dragProps,
+          }) => (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap gap-4">
+                {imageList.map((image, index) => (
+                  <div key={index} className="relative group w-24 h-24">
+                    <div className="w-full h-full rounded-lg border border-gray-200 overflow-hidden bg-white">
+                      <ImageCustom
+                        isUser={false}
+                        isLocal={!!image.data_url}
+                        url={image.data_url || null}
+                        className="object-contain w-full h-full"
+                      />
+                    </div>
+                    <div className="absolute top-1 right-1 flex gap-1 bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        className="p-1 text-white hover:text-blue-300 transition-colors"
+                        onClick={() => onImageUpdate(index)}
+                        title="Thay đổi"
+                      >
+                        <IconEdit className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 text-white hover:text-red-300 transition-colors"
+                        onClick={() => onImageRemove(index)}
+                        title="Xóa"
+                      >
+                        <IconX className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Upload Button Placeholder */}
+                {imageList.length < 1 && (
+                  <div
+                    className={`w-24 h-24 rounded-lg bg-gray-50 border border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-colors ${isDragging ? 'border-blue-500 bg-blue-50' : ''}`}
+                    onClick={onImageUpload}
+                    {...dragProps}
+                  >
+                    <Upload className="text-gray-400 w-6 h-6 mb-1" />
+                    <span className="text-xs text-gray-600 font-medium">Tải ảnh</span>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
-        </div>
-        <button className="px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded hover:bg-blue-100 flex items-center gap-2 transition-colors">
-          <Upload size={16} /> Tải ảnh lên
-        </button>
+        </ImageUploading>
       </div>
-    </div>
-  );
+    );
+  };
 
   // --- Render Modal Body ---
   const renderModalBody = useCallback(() => {
@@ -144,8 +210,8 @@ const CreateCategory: React.FC<CreateCategoryProps> = ({ isOpen, onClose, onSave
                   {renderRowImageUploading({
                     required: false,
                     labelName: "Hình ảnh",
-                    value: values.image,
-                    name: "image"
+                    value: values.image_url,
+                    name: "image_url"
                   })}
                 </div>
                 <div className="lg:col-span-2">

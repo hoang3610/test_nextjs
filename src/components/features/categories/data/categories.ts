@@ -1,21 +1,4 @@
-export interface Category {
-  id: string; // Changed to string to match Mongo ID
-  name: string;
-  slug: string; // Renamed from code
-  description?: string;
-  image?: string;
-  is_active: boolean; // Renamed from is_app_visible
-}
-
-// Định nghĩa thêm Interface cho Payload gửi đi
-export interface CategoryPayload {
-  name: string;
-  slug?: string;
-  description?: string;
-  image?: string;
-  is_active: boolean;
-  id?: string;
-}
+import { Category } from '../models';
 
 const categoryNames = [
   'Áo Thun Cotton Basic', 'Quần Jeans Slim-fit', 'Giày Sneaker Da', 'Mũ Lưỡi Trai Thêu Logo',
@@ -34,9 +17,10 @@ const generateCategories = (count: number): Category[] => {
       name: `${name} #${i}`,
       slug: slug,
       is_active: Math.random() > 0.5,
+      image_url: `https://placehold.co/40`, // Added mock image_url
     });
   }
   return categories;
 };
 
-export const mockProducts: Category[] = generateCategories(50);
+export const mockCategories: Category[] = generateCategories(50);

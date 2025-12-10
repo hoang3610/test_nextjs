@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import { mockProducts } from '@/components/features/products/data/products'; // Sử dụng alias @ cho gọn
 import ProductSection from '@/components/features/products/ProductSection';
-import CategorySection, { type Category } from '@/components/features/products/CategorySection';
+import CategorySection from '@/components/features/products/CategorySection';
+import { CategoryClient } from '@/components/features/categories/models/request';
 import { Button } from '@/components/ui/button';
 
 // 1. Cấu hình SEO cho trang chủ
@@ -10,18 +11,36 @@ export const metadata: Metadata = {
   description: 'Chuyên cung cấp quần áo, phụ kiện thời trang chính hãng.',
 };
 
-// Mock data cho danh mục
-const categories: Category[] = [
-  { name: 'Áo Thun', imageUrl: 'https://picsum.photos/id/211/400/400' },
-  { name: 'Quần Jeans', imageUrl: 'https://picsum.photos/id/212/400/400' },
-  { name: 'Giày Sneaker', imageUrl: 'https://picsum.photos/id/213/400/400' },
-  { name: 'Balo', imageUrl: 'https://picsum.photos/id/214/400/400' },
-  { name: 'Đồng Hồ', imageUrl: 'https://picsum.photos/id/215/400/400' },
-  { name: 'Áo Khoác', imageUrl: 'https://picsum.photos/id/216/400/400' },
-];
+// 2. Fetch data from API
+async function getData(): Promise<CategoryClient[]> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/categories?limit=6&is_active=true&sort_order=asc`, {
+      next: { revalidate: 60 }, // Revalidate every 60 seconds
+    });
 
-// 2. Server Component (Async function)
+    if (!res.ok) {
+      throw new Error('Failed to fetch categories');
+    }
+
+    const json = await res.json();
+    return json.data.map((item: any) => ({
+      id: item._id,
+      name: item.name,
+      slug: item.slug,
+      is_active: item.is_active,
+      image_url: item.image_url,
+    }));
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+}
+
+// 3. Server Component (Async function)
 export default async function HomePage() {
+  const categories = await getData();
+
   // Vì là Server Component chạy 1 lần, ta lọc trực tiếp không cần useMemo
   const newProducts = mockProducts.filter(p => p.isNew);
   const featuredProducts = mockProducts.filter(p => p.isFeatured);
@@ -42,7 +61,9 @@ export default async function HomePage() {
 
       {/* Danh mục */}
       <div className="container mx-auto px-4">
-        <CategorySection title="Danh mục nổi bật" categories={categories} />
+        {categories.length > 0 && (
+          <CategorySection title="Danh mục nổi bật" categories={categories} />
+        )}
       </div>
 
       {/* Các Product Section */}
