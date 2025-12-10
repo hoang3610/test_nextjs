@@ -45,6 +45,6 @@ export interface ProductResponse {
     price?: number;
     original_price?: number; // Renamed from price_original
     stock?: number;
-    images?: string[];
-    images_mobile?: string[];
+    images?: '';
+    images_mobile?: '';
 }

@@ -40,13 +40,6 @@ const PRODUCT_TYPE = {
   HITA: 3,
 };
 
-// --- Mock Data ---
-// TODO: Thay thế bằng dữ liệu thật từ API
-const dataCategories = [
-  { id: 1, name: 'Điện tử' },
-  { id: 2, name: 'Thời trang' },
-  { id: 3, name: 'Nhà cửa' },
-];
 
 // --- Props Interface ---
 // --- Props Interface ---
@@ -56,10 +49,13 @@ interface EditProductProps {
   onSave: (productData: Partial<ProductFormState>) => void;
   productData: Partial<ProductFormState> | null;
   isViewMode: boolean;
+  categories: { _id: string; name: string }[]; // Add categories prop
 }
 
-const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, productData, isViewMode }) => {
+const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, productData, isViewMode, categories }) => {
   // --- State ---
+  // categories state lifted up
+
   const [formData, setFormData] = useState<Partial<ProductFormState>>({
     name: '',
     original_price: 0,
@@ -315,8 +311,8 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
                       onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                     >
                       <option value="" disabled>Chọn danh mục</option>
-                      {dataCategories.map((category) => (
-                        <option key={category.id} value={category.id}>
+                      {categories.map((category) => (
+                        <option key={category._id} value={category._id}>
                           {category.name}
                         </option>
                       ))}
@@ -749,7 +745,7 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
         `}</style>
       </div >
     );
-  }, [formData, isViewMode]);
+  }, [formData, isViewMode, categories]);
 
   // --- Render Modal Footer ---
   const renderModalFooter = () => (

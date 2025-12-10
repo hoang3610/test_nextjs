@@ -54,14 +54,14 @@ interface CreateProductProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (productData: Partial<ProductFormData>) => void;
-  isViewMode?: boolean; // Added isViewMode
+  isViewMode?: boolean;
+  categories: Category[]; // Add categories prop
 }
 
-const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, isViewMode = false }) => {
+const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, isViewMode = false, categories }) => {
   // --- State ---
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [touchedSlug, setTouchedSlug] = useState(false); // New state to track if slug was manually edited
+  // categories state lifted up
+  const [touchedSlug, setTouchedSlug] = useState(false);
   const [formData, setFormData] = useState<Partial<ProductFormData>>({
     name: '',
     slug: '',
@@ -82,25 +82,9 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
 
   // --- Effects ---
   useEffect(() => {
-    const fetchCategories = async () => {
-      setIsLoadingCategories(true);
-      try {
-        const response = await fetch('/api/categories?limit=100');
-        if (response.ok) {
-          const result = await response.json();
-          setCategories(result.data || []);
-        } else {
-          console.error('Failed to fetch categories');
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
 
     if (isOpen) {
-      fetchCategories();
+      // fetchCategories removed - passed via props
       setTouchedSlug(false); // Reset touched state
       // Reset form data when opening
       setFormData({
@@ -361,9 +345,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                       onChange={(e) => setFormData({ ...values, category_id: e.target.value })}
                     >
                       <option value="" disabled>Chọn danh mục</option>
-                      {isLoadingCategories ? (
-                        <option disabled>Đang tải...</option>
-                      ) : categories.length > 0 ? (
+                      {categories.length > 0 ? (
                         categories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
@@ -802,7 +784,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
         `}</style>
       </div>
     );
-  }, [formData, setFormData, categories, isLoadingCategories, isViewMode]);
+  }, [formData, isViewMode, categories]);
 
   // --- Render Modal Footer ---
   const renderModalFooter = () => (

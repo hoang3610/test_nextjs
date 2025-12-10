@@ -14,6 +14,7 @@ import ModalConfirmCustom from '@/components/custom/modal-confirm-custom';
 const ProductIndexPage = () => {
   // --- State ---
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]); // Add categories state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage] = useState(10);
@@ -79,6 +80,19 @@ const ProductIndexPage = () => {
 
   useEffect(() => {
     fetchProducts();
+    // Fetch categories once on mount
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories?limit=100&is_active=true');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
   }, [fetchProducts]);
 
   // --- Helper: Fetch Detail ---
@@ -376,6 +390,7 @@ const ProductIndexPage = () => {
         isOpen={isCreateModalOpen}
         onClose={handleCloseModals}
         onSave={handleSaveNewProduct}
+        categories={categories} // Pass categories
       />
       {selectedProduct && (
         <EditProduct
@@ -384,6 +399,7 @@ const ProductIndexPage = () => {
           onSave={handleSaveEditedProduct}
           productData={selectedProduct as any}
           isViewMode={isViewMode}
+          categories={categories} // Pass categories
         />
       )}
       <ModalConfirmCustom
