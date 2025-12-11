@@ -4,6 +4,7 @@ import Product from '@/models/Product';
 import '@/models/Category'; // Ensure model is registered
 import '@/models/Brand';    // Ensure model is registered
 
+
 export async function GET(
     request: Request,
     props: { params: Promise<{ id: string }> }

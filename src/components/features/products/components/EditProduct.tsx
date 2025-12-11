@@ -6,6 +6,11 @@ import { Upload, Plus, Trash2, X, ToggleLeft, ToggleRight, Bold, Italic } from '
 // --- Imports ---
 import { ModalCustom } from '../../../custom/modal-custom';
 import { ProductResponse } from '../models/response/product';
+import ImageUploading, { ErrorsType, ImageListType } from 'react-images-uploading';
+import { showToast } from '@/components/custom/custom-toast';
+import IconEdit from '@/components/icons/icon-edit';
+import IconX from '@/components/icons/icon-x';
+import ImageCustom from '@/components/custom/image-custom';
 
 // --- Interface ---
 export interface Attribute {
@@ -65,8 +70,8 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
     product_type: PRODUCT_TYPE.PHYSICAL,
     is_active: false,
     // skus: ...
-    images: '',
-    images_mobile: '',
+    image_urls: [],
+    image_mobile_urls: [],
     short_description: '',
     description: '',
     has_variants: false,
@@ -251,27 +256,90 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
     </div>
   );
 
-  const renderRowImageUploading = ({ labelName, required, value }: any) => (
-    <div className="mt-4">
-      <label className="text-sm font-semibold text-gray-700 mb-2 block">
-        {labelName} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="flex items-center gap-4">
-        <div className="w-24 h-24 rounded-lg bg-gray-50 border border-gray-300 flex items-center justify-center overflow-hidden relative group shrink-0">
-          {value ? (
-            <img src={value} className="w-full h-full object-cover" alt="Preview" />
-          ) : (
-            <Upload className="text-gray-300" size={24} />
+  const renderRowImageUploading = ({ labelName, required, value, name }: any) => {
+    const images: ImageListType = Array.isArray(value)
+      ? value.map((url: string) => ({ data_url: url }))
+      : [];
+
+    const onChange = (imageList: ImageListType) => {
+      const newValues = imageList.map(img => img.data_url);
+      setFormData(prev => ({ ...prev, [name]: newValues }));
+    };
+
+    return (
+      <div className="mt-4 w-full">
+        <label className="text-sm font-semibold text-gray-700 mb-2 block">
+          {labelName} {required && <span className="text-red-500">*</span>}
+        </label>
+        <ImageUploading
+          multiple={true}
+          value={images}
+          onChange={onChange}
+          maxNumber={5}
+          dataURLKey="data_url"
+          onError={(errors: ErrorsType) => {
+            if (errors?.maxNumber) showToast({ message: "Chỉ được chọn tối đa 5 ảnh", type: "warning" });
+            if (errors?.acceptType) showToast({ message: "Chỉ được phép tải lên ảnh", type: "warning" });
+          }}
+        >
+          {({
+            imageList,
+            onImageUpload,
+            onImageUpdate,
+            onImageRemove,
+            isDragging,
+            dragProps,
+          }) => (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap gap-4">
+                {imageList.map((image, index) => (
+                  <div key={index} className="relative group w-24 h-24">
+                    <div className="w-full h-full rounded-lg border border-gray-200 overflow-hidden bg-white">
+                      <ImageCustom
+                        isUser={false}
+                        isLocal={!!image.data_url}
+                        url={image.data_url || null}
+                        className="object-contain w-full h-full"
+                      />
+                    </div>
+                    <div className="absolute top-1 right-1 flex gap-1 bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        className="p-1 text-white hover:text-blue-300 transition-colors"
+                        onClick={() => onImageUpdate(index)}
+                        title="Thay đổi"
+                      >
+                        <IconEdit className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 text-white hover:text-red-300 transition-colors"
+                        onClick={() => onImageRemove(index)}
+                        title="Xóa"
+                      >
+                        <IconX className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {imageList.length < 5 && (
+                  <div
+                    className={`w-24 h-24 rounded-lg bg-gray-50 border border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-colors ${isDragging ? 'border-blue-500 bg-blue-50' : ''}`}
+                    onClick={onImageUpload}
+                    {...dragProps}
+                  >
+                    <Upload className="text-gray-400 w-6 h-6 mb-1" />
+                    <span className="text-xs text-gray-600 font-medium">Tải ảnh</span>
+                    <span className="text-[10px] text-gray-400">({imageList.length}/5)</span>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
-        </div>
-        {!isViewMode && (
-          <button className="px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded hover:bg-blue-100 flex items-center gap-2 transition-colors">
-            <Upload size={16} /> Tải ảnh lên
-          </button>
-        )}
+        </ImageUploading>
       </div>
-    </div>
-  );
+    );
+  };
 
   // --- Render Modal Body ---
   const renderModalBody = useCallback(() => {
@@ -382,14 +450,14 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
               {renderRowImageUploading({
                 required: true,
                 labelName: "Hình ảnh sản phẩm",
-                value: values.images,
-                name: "images"
+                value: values.image_urls,
+                name: "image_urls"
               })}
               {renderRowImageUploading({
                 required: true,
                 labelName: "Hình ảnh hiển thị trên mobile",
-                value: values.images_mobile,
-                name: "images_mobile"
+                value: values.image_mobile_urls,
+                name: "image_mobile_urls"
               })}
             </div>
             <div className="mt-4">

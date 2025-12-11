@@ -11,6 +11,7 @@ import { Category } from '../models'; // Import shared model
 import { CategoryRequest } from '../models/request';
 
 import { showToast } from '@/components/custom/custom-toast';
+import { uploadImageClient } from '@/lib/cloudinary-client';
 
 const CategoryIndexPage = () => {
   // --- State ---
@@ -115,6 +116,12 @@ const CategoryIndexPage = () => {
 
   const handleSaveNewCategory = async (newCategory: CategoryRequest) => {
     try {
+      setIsLoading(true);
+      // Upload image first
+      if (newCategory.image_url) {
+        newCategory.image_url = await uploadImageClient(newCategory.image_url, 'ecommerce_categories');
+      }
+
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: {
@@ -136,6 +143,8 @@ const CategoryIndexPage = () => {
     } catch (error) {
       console.error("Error creating category:", error);
       showToast({ message: "Đã xảy ra lỗi khi tạo danh mục.", type: "error" })
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -232,6 +241,12 @@ const CategoryIndexPage = () => {
     }
 
     try {
+      setIsLoading(true);
+      // Upload image first
+      if (editedCategory.image_url) {
+        editedCategory.image_url = await uploadImageClient(editedCategory.image_url, 'ecommerce_categories');
+      }
+
       const response = await fetch(`/api/categories/${editedCategory.id}/update`, {
         method: 'POST', // User requested behavior/Existing API method
         headers: {
@@ -253,6 +268,8 @@ const CategoryIndexPage = () => {
     } catch (error) {
       console.error("Error updating category:", error);
       showToast({ message: "Đã xảy ra lỗi khi cập nhật danh mục.", type: "error" })
+    } finally {
+      setIsLoading(false);
     }
   };
 

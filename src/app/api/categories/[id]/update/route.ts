@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Category from '@/models/Category';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+
 
 export async function POST(
     request: Request,
@@ -35,10 +35,7 @@ export async function POST(
         }
 
 
-        // Upload image to Cloudinary
-        if (body.image_url) {
-            body.image_url = await uploadToCloudinary(body.image_url, 'ecommerce_categories');
-        }
+
 
         // Update fields
         // Allowing flexible updates based on payload

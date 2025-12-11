@@ -10,6 +10,7 @@ import EditProduct, { ProductFormState } from '../components/EditProduct';
 
 import { showToast } from '@/components/custom/custom-toast';
 import ModalConfirmCustom from '@/components/custom/modal-confirm-custom';
+import { uploadImageClient } from '@/lib/cloudinary-client';
 
 const ProductIndexPage = () => {
   // --- State ---
@@ -111,6 +112,8 @@ const ProductIndexPage = () => {
           category_id: data.category_id,
           brand_id: data.brand_id,
           is_active: data.is_active,
+          image_urls: data.image_urls,
+          image_mobile_urls: data.image_mobile_urls,
           has_variants: data.has_variants,
           skus: data.skus,
           attributes_summary: data.attributes_summary,
@@ -138,21 +141,37 @@ const ProductIndexPage = () => {
   const handleSaveNewProduct = async (newData: any) => {
     // Transform data for API
     try {
+      setIsLoading(true); // Add loading state if not already handled nicely globally or add local loading
+
+      // Upload images first
+      let finalImageUrls: string[] = [];
+      if (newData.image_urls && newData.image_urls.length > 0) {
+        finalImageUrls = await Promise.all(
+          newData.image_urls.map((url: string) => uploadImageClient(url))
+        );
+      }
+
+      let finalMobileImageUrls: string[] = [];
+      if (newData.image_mobile_urls && newData.image_mobile_urls.length > 0) {
+        finalMobileImageUrls = await Promise.all(
+          newData.image_mobile_urls.map((url: string) => uploadImageClient(url))
+        );
+      }
+
       const payload: any = {
         name: newData.name,
         slug: newData.slug,
         category_id: newData.category_id,
         product_type: newData.product_type,
-        is_active: newData.is_app_visible, // Map UI field to API
-        thumbnail_url: newData.images, // Use main image for thumbnail
+        is_active: newData.is_active,
+        thumbnail_url: finalImageUrls?.[0] || '',
+        image_urls: finalImageUrls,
+        image_mobile_urls: finalMobileImageUrls,
         description: newData.description,
         has_variants: newData.has_variants,
         skus: [],
         attributes_summary: []
       };
-
-      console.log("payload", payload)
-      console.log("newData", newData)
 
       if (newData.has_variants) {
         // Map Variants
@@ -209,6 +228,8 @@ const ProductIndexPage = () => {
     } catch (e) {
       console.error(e);
       alert("Có lỗi xảy ra khi tạo sản phẩm");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -242,15 +263,33 @@ const ProductIndexPage = () => {
     // Logic similar to handleSaveNewProduct but for update
     try {
       if (!selectedProduct?.id) return;
+      setIsLoading(true);
+
+      // Upload images first
+      let finalImageUrls: string[] = [];
+      if (editedData.image_urls && editedData.image_urls.length > 0) {
+        finalImageUrls = await Promise.all(
+          editedData.image_urls.map((url: string) => uploadImageClient(url))
+        );
+      }
+
+      let finalMobileImageUrls: string[] = [];
+      if (editedData.image_mobile_urls && editedData.image_mobile_urls.length > 0) {
+        finalMobileImageUrls = await Promise.all(
+          editedData.image_mobile_urls.map((url: string) => uploadImageClient(url))
+        );
+      }
 
       const payload: any = {
         name: editedData.name,
         slug: editedData.slug,
         description: editedData.description,
-        thumbnail_url: editedData.thumbnail_url || editedData.images, // Fallback if images used or thumbnail_url
+        thumbnail_url: finalImageUrls?.[0] || editedData.thumbnail_url || '',
         category_id: typeof editedData.category_id === 'string' ? editedData.category_id : editedData.category_id?._id,
         brand_id: typeof editedData.brand_id === 'string' ? editedData.brand_id : editedData.brand_id?._id,
         is_active: editedData.is_active,
+        image_urls: finalImageUrls,
+        image_mobile_urls: finalMobileImageUrls,
         has_variants: editedData.has_variants,
         skus: [],
         attributes_summary: []
@@ -310,6 +349,8 @@ const ProductIndexPage = () => {
     } catch (error) {
       console.error("Error updating product:", error);
       showToast({ message: "Lỗi cập nhật sản phẩm", type: "error" })
+    } finally {
+      setIsLoading(false);
     }
   };
 

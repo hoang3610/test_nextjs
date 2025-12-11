@@ -42,6 +42,8 @@ const ProductSchema = new Schema({
 
     is_active: { type: Boolean, default: true },
     has_variants: { type: Boolean, default: false },
+    image_urls: [String],
+    image_mobile_urls: [String],
 
     // Faceted Search Summary
     attributes_summary: [{
