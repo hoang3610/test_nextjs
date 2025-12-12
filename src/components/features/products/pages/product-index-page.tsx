@@ -182,12 +182,25 @@ const ProductIndexPage = () => {
           values: attr.values
         }));
 
+        // Upload variant images
+        let finalVariants = await Promise.all(
+          newData.variants.map(async (v: any) => {
+            let finalVariantImageUrl = v.image_url;
+            if (v.image_url && v.image_url.startsWith('data:')) {  // Basic check for new upload
+              finalVariantImageUrl = await uploadImageClient(v.image_url);
+            }
+            return { ...v, image_url: finalVariantImageUrl };
+          })
+        );
+
+
         // 2. Build SKUs
-        payload.skus = newData.variants.map((v: any) => ({
+        payload.skus = finalVariants.map((v: any) => ({
           sku: v.sku,
           price: v.price,
           stock: v.stock,
           original_price: v.original_price || newData.original_price,
+          image_url: v.image_url, // Map image_url to image_url field in API
           is_active: true,
           attributes: Object.entries(v.attributes).map(([key, value]) => ({
             name: key,
@@ -299,16 +312,31 @@ const ProductIndexPage = () => {
         // 1. Build attributes_summary
         payload.attributes_summary = editedData.product_attributes?.map((attr: any) => ({
           name: attr.name,
-          code: attr.name.toLowerCase(),
+          code: attr.name.toLowerCase(), // Simple Code generation
           values: attr.values
         })) || [];
 
+        // Upload variant images
+        let finalVariants = [];
+        if (editedData.variants) {
+          finalVariants = await Promise.all(
+            editedData.variants.map(async (v: any) => {
+              let finalVariantImageUrl = v.image_url;
+              if (v.image_url && v.image_url.startsWith('data:')) {
+                finalVariantImageUrl = await uploadImageClient(v.image_url);
+              }
+              return { ...v, image_url: finalVariantImageUrl };
+            })
+          );
+        }
+
         // 2. Build SKUs
-        payload.skus = editedData.variants?.map((v: any) => ({
+        payload.skus = finalVariants.map((v: any) => ({
           sku: v.sku,
           price: v.price,
           stock: v.stock,
           original_price: v.original_price || editedData.original_price,
+          image_url: v.image_url, // Map image_url to image_url field
           is_active: true,
           attributes: v.attributes ? Object.entries(v.attributes).map(([key, value]) => ({
             name: key,
@@ -396,7 +424,11 @@ const ProductIndexPage = () => {
           showToast({ message: `Xóa sản phẩm thất bại: ${data.error}`, type: "error" });
         }
       } else if (type === 'CHANGE_STATUS') {
-        const response = await fetch(`/api/products/${product.id}/change-status`);
+        const response = await fetch(`/api/products/${product.id}/change-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: !product.is_active })
+        });
         if (response.ok) {
           showToast({ message: "Thay đổi trạng thái sản phẩm thành công!", type: "success" });
           fetchProducts();

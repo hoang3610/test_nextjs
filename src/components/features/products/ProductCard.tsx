@@ -5,7 +5,7 @@ import Link from 'next/link';   // 2. Thay thế react-router-dom
 import Image from 'next/image'; // 3. Component ảnh tối ưu của Next.js
 import { useCart } from '@/hooks/useCart'; // Nên dùng alias @ thay cho ../../../
 // Giả sử bạn đã định nghĩa type Product ở đâu đó
-import type { Product } from '@/types'; 
+import type { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
@@ -29,7 +29,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <div className="group relative overflow-hidden rounded-lg shadow-md bg-white dark:bg-gray-800 transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700">
-      
+
       {/* Image Container */}
       <div className="relative h-64 w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
         {/* Dùng fill: Ảnh sẽ tự tràn đầy khung cha (cha phải có relative + height cụ thể)
@@ -59,7 +59,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         {/* Add to Cart Button */}
         <div className="absolute inset-x-0 bottom-0 flex justify-center bg-black/40 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-20">
-          <button 
+          <button
             onClick={(e) => {
               e.preventDefault(); // Ngăn click nhầm vào Link sản phẩm
               addToCart(product);

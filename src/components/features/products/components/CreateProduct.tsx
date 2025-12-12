@@ -26,6 +26,7 @@ interface ProductVariant {
   stock: number;
   attributes: Record<string, string>;
   original_price?: number;
+  image_url?: string;
 }
 
 // Map UI Form Data to ProductRequest for submission
@@ -100,7 +101,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
         stock: 0,
         category_id: '',
         product_type: PRODUCT_TYPE.PHYSICAL,
-        is_active: false,
+        is_active: true,
         image_urls: [],
         image_mobile_urls: [],
         short_description: '',
@@ -248,6 +249,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
         stock: 0,
         original_price: formData.original_price || 0,
         attributes: variantAttributes,
+        image_url: '',
       };
     });
 
@@ -728,6 +730,7 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                           <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10">
                             <tr>
                               <th className="px-4 py-3 bg-gray-100">Phiên bản</th>
+                              <th className="px-4 py-3 w-20 bg-gray-100 text-center">Ảnh</th>
                               <th className="px-4 py-3 w-32 bg-gray-100">Giá</th>
                               <th className="px-4 py-3 w-32 bg-gray-100">Giá nhập</th>
                               <th className="px-4 py-3 w-24 bg-gray-100">Kho</th>
@@ -739,6 +742,50 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
                               <tr key={index} className="border-b hover:bg-gray-50">
                                 <td className="px-4 py-3 font-medium text-gray-900">
                                   {Object.values(variant.attributes).join(' - ')}
+                                </td>
+
+                                <td className="px-4 py-3 text-center">
+                                  <ImageUploading
+                                    multiple={false}
+                                    value={variant.image_url ? [{ data_url: variant.image_url }] : []}
+                                    onChange={(imageList) => {
+                                      const newVariants = [...values.variants!];
+                                      newVariants[index].image_url = imageList[0]?.data_url || '';
+                                      setFormData({ ...values, variants: newVariants });
+                                    }}
+                                    maxNumber={1}
+                                    dataURLKey="data_url"
+                                  >
+                                    {({
+                                      imageList,
+                                      onImageUpload,
+                                      onImageUpdate,
+                                      isDragging,
+                                      dragProps,
+                                    }) => (
+                                      <div className="flex justify-center">
+                                        {imageList[0] ? (
+                                          <div className="relative group w-10 h-10">
+                                            <img
+                                              src={imageList[0].data_url}
+                                              alt="Variant"
+                                              className="w-full h-full object-cover rounded border border-gray-200 cursor-pointer"
+                                              onClick={() => onImageUpdate(0)}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <button
+                                            className={`w-10 h-10 border border-dashed border-gray-300 rounded flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition-colors ${isDragging ? 'border-blue-500 bg-blue-50' : ''}`}
+                                            onClick={onImageUpload}
+                                            {...dragProps}
+                                            disabled={isViewMode}
+                                          >
+                                            <Upload size={14} className="text-gray-400" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </ImageUploading>
                                 </td>
 
                                 <td className="px-4 py-3">
