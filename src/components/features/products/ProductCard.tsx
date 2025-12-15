@@ -75,7 +75,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div className="p-4 text-center">
         <h3 className="text-base font-semibold text-gray-800 dark:text-white truncate" title={product.name}>
           {/* Link bao quanh tên sản phẩm */}
-          <Link href={`/product/${product.id}`} className="hover:text-blue-600 transition-colors">
+          <Link href={`/products/${product.slug}`} className="hover:text-blue-600 transition-colors">
             {product.name}
           </Link>
         </h3>

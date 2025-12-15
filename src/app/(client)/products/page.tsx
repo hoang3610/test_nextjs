@@ -57,6 +57,7 @@ const ProductContent = () => {
           const mappedProducts = data.data.map((item: any) => ({
             id: item._id,
             name: item.name,
+            slug: item.slug,
             price: item.skus?.[0]?.price || 0, // Fallback price
             imageUrl: item.thumbnail_url || 'https://placehold.co/400',
             isNew: Math.random() > 0.8, // Mock logic for UI

@@ -5,9 +5,9 @@ import { Product, CartItem } from '@/types'; // Import từ file types chung
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number) => void;
+  removeFromCart: (productId: string | number) => void;
+  updateQuantity: (productId: string | number, quantity: number) => void;
   clearCart: () => void; // Thêm hàm xóa sạch giỏ khi thanh toán xong
   cartCount: number;
   cartTotal: number;
@@ -39,23 +39,23 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [cartItems, isInitialized]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
         return prevItems.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prevItems, { ...product, quantity: 1 }];
+      return [...prevItems, { ...product, quantity: quantity }];
     });
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string | number) => {
     setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = (productId: string | number, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
     } else {
