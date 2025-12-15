@@ -33,6 +33,7 @@ const ProductSkuSchema = new Schema({
 const ProductSchema = new Schema({
     name: { type: String, required: true, index: true },
     slug: { type: String, required: true, unique: true },
+    short_description: String,
     description: String,
     thumbnail_url: String,
 

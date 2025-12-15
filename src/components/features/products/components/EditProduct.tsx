@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Upload, Plus, Trash2, X, ToggleLeft, ToggleRight, Bold, Italic } from 'lucide-react';
+import { Upload, Plus, Trash2, X, ToggleLeft, ToggleRight } from 'lucide-react';
 
 // --- Imports ---
 import { ModalCustom } from '../../../custom/modal-custom';
@@ -11,6 +11,7 @@ import { showToast } from '@/components/custom/custom-toast';
 import IconEdit from '@/components/icons/icon-edit';
 import IconX from '@/components/icons/icon-x';
 import ImageCustom from '@/components/custom/image-custom';
+import QuillEditor from '@/components/custom/quill-editor';
 
 // --- Interface ---
 export interface Attribute {
@@ -465,13 +466,22 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
             </div>
             <div className="mt-4">
               <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                Mô tả ngắn
+              </label>
+              <QuillEditor
+                readOnly={isViewMode}
+                value={formData.short_description || ''}
+                onChange={(val) => setFormData({ ...formData, short_description: val })}
+              />
+            </div>
+            <div className="mt-4">
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
                 Mô tả sản phẩm
               </label>
-              <textarea
-                className="form-input w-full h-32 resize-none"
-                placeholder="Nhập mô tả sản phẩm..."
-                value={values.description || ''}
-                onChange={(e) => setFormData({ ...values, description: e.target.value })}
+              <QuillEditor
+                readOnly={isViewMode}
+                value={formData.description || ''}
+                onChange={(val) => setFormData({ ...formData, description: val })}
               />
             </div>
 

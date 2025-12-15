@@ -6,6 +6,7 @@ import { useCart } from '@/hooks/useCart';
 import { ShoppingCart, Heart, Share2 } from 'lucide-react';
 import { showToast } from '@/components/custom/custom-toast';
 import Lightbox from '@/components/common/Lightbox';
+import 'react-quill-new/dist/quill.snow.css'; // Import Quill CSS for display
 
 // Re-using types or defining pertinent ones
 interface ProductAttribute {
@@ -239,9 +240,19 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                         )}
                     </div>
 
-                    <p className="text-gray-600 leading-relaxed">
-                        {product.short_description || "Chưa có mô tả ngắn."}
-                    </p>
+                    <div className="text-gray-600 leading-relaxed">
+                        {product.short_description ? (
+                            <div className="ql-snow">
+                                <div
+                                    className="ql-editor"
+                                    dangerouslySetInnerHTML={{ __html: product.short_description }}
+                                    style={{ padding: 0, height: 'auto' }}
+                                />
+                            </div>
+                        ) : (
+                            "Chưa có mô tả ngắn."
+                        )}
+                    </div>
 
                     <div className="h-px bg-gray-200" />
 
@@ -327,9 +338,15 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
             {/* Description Tab */}
             <div className="mt-16">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b pb-2">Mô tả chi tiết</h2>
-                <div className="prose max-w-none text-gray-700">
+                <div className="text-gray-700">
                     {product.description ? (
-                        <div dangerouslySetInnerHTML={{ __html: product.description.replace(/\n/g, '<br />') }} />
+                        <div className="ql-snow">
+                            <div
+                                className="ql-editor"
+                                dangerouslySetInnerHTML={{ __html: product.description }}
+                                style={{ padding: 0, height: 'auto' }} // Override default padding
+                            />
+                        </div>
                     ) : (
                         <p>Đang cập nhật...</p>
                     )}
@@ -342,7 +359,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                 images={allImages}
                 currentImage={mainImage || ''}
             />
-        </div>
+        </div >
     );
 };
 

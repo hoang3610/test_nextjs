@@ -117,6 +117,7 @@ const ProductIndexPage = () => {
           has_variants: data.has_variants,
           skus: data.skus,
           attributes_summary: data.attributes_summary,
+          short_description: data.short_description,
           description: data.description,
           price: data.skus?.[0]?.price || 0,
           original_price: data.skus?.[0]?.original_price || 0,
@@ -167,6 +168,7 @@ const ProductIndexPage = () => {
         thumbnail_url: finalImageUrls?.[0] || '',
         image_urls: finalImageUrls,
         image_mobile_urls: finalMobileImageUrls,
+        short_description: newData.short_description,
         description: newData.description,
         has_variants: newData.has_variants,
         skus: [],
@@ -296,6 +298,7 @@ const ProductIndexPage = () => {
       const payload: any = {
         name: editedData.name,
         slug: editedData.slug,
+        short_description: editedData.short_description,
         description: editedData.description,
         thumbnail_url: finalImageUrls?.[0] || editedData.thumbnail_url || '',
         category_id: typeof editedData.category_id === 'string' ? editedData.category_id : editedData.category_id?._id,

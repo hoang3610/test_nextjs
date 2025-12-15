@@ -31,6 +31,7 @@ export interface AttributeSummaryRequest {
 export interface ProductRequest {
     name: string;
     slug: string;
+    short_description?: string;
     description?: string;
     thumbnail_url?: string;
 

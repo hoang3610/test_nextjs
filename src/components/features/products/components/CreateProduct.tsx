@@ -12,6 +12,7 @@ import { showToast } from '@/components/custom/custom-toast';
 import IconEdit from '@/components/icons/icon-edit';
 import IconX from '@/components/icons/icon-x';
 import ImageCustom from '@/components/custom/image-custom';
+import QuillEditor from '@/components/custom/quill-editor';
 
 // --- Interface ---
 interface Attribute {
@@ -502,14 +503,22 @@ const CreateProduct: React.FC<CreateProductProps> = ({ isOpen, onClose, onSave, 
             </div>
             <div className="mt-4">
               <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                Mô tả ngắn
+              </label>
+              <QuillEditor
+                readOnly={isViewMode}
+                value={values.short_description || ''}
+                onChange={(val) => setFormData({ ...values, short_description: val })}
+              />
+            </div>
+            <div className="mt-4">
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
                 Mô tả sản phẩm
               </label>
-              <textarea
-                disabled={isViewMode}
-                className="form-input w-full h-32 resize-none"
-                placeholder="Nhập mô tả sản phẩm..."
+              <QuillEditor
+                readOnly={isViewMode}
                 value={values.description || ''}
-                onChange={(e) => setFormData({ ...values, description: e.target.value })}
+                onChange={(val) => setFormData({ ...values, description: val })}
               />
             </div>
 
