@@ -4,6 +4,9 @@ import ProductSection from '@/components/features/products/ProductSection';
 import CategorySection from '@/components/features/products/CategorySection';
 import { CategoryClient } from '@/components/features/categories/models/request';
 import { Button } from '@/components/ui/button';
+import dbConnect from '@/lib/db';
+import Category from '@/models/Category';
+import { unstable_noStore as noStore } from 'next/cache';
 
 // 1. Cấu hình SEO cho trang chủ
 export const metadata: Metadata = {
@@ -12,20 +15,20 @@ export const metadata: Metadata = {
 };
 
 // 2. Fetch data from API
+// 2. Fetch data directly from DB (Server Component pattern)
 async function getData(): Promise<CategoryClient[]> {
+  noStore(); // Opt out of static rendering if needed, or rely on revalidate
+  await dbConnect();
+
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/categories?limit=6&is_active=true&sort_order=asc`, {
-      next: { revalidate: 60 }, // Revalidate every 60 seconds
-    });
+    const categories = await Category.find({ is_active: true })
+      .sort({ sort_order: 1 })
+      .limit(6)
+      .lean();
 
-    if (!res.ok) {
-      throw new Error('Failed to fetch categories');
-    }
-
-    const json = await res.json();
-    return json.data.map((item: any) => ({
-      id: item._id,
+    // Map to plain object
+    return categories.map((item: any) => ({
+      id: item._id.toString(),
       name: item.name,
       slug: item.slug,
       is_active: item.is_active,

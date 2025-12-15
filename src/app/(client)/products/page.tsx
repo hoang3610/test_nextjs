@@ -49,8 +49,8 @@ const ProductContent = () => {
         // Current FilterSidebar passes 'category' as string. 
         // Let's simple fetch all for now and standard filtering, or improve later.
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-        const res = await fetch(`${baseUrl}/api/products?${params.toString()}`);
+        // const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1212';
+        const res = await fetch(`/api/products?${params.toString()}`);
         const data = await res.json();
 
         if (res.ok) {

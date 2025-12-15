@@ -1,5 +1,6 @@
 export interface Product {
   id: number;
+  slug: string;
   name: string;
   price: number;
   imageUrl: string;
@@ -20,9 +21,22 @@ const generateProducts = (count: number): Product[] => {
   for (let i = 1; i <= count; i++) {
     const name = productNames[Math.floor(Math.random() * productNames.length)];
     const price = (Math.floor(Math.random() * (3000 - 150 + 1)) + 150) * 1000;
+    const productName = `${name} #${i}`;
+
+    // Simple slug generator: lowercase, replace spaces with hyphens, remove special chars
+    const slug = productName
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
+
     products.push({
       id: i,
-      name: `${name} #${i}`,
+      slug,
+      name: productName,
       price: price,
       imageUrl: `https://picsum.photos/id/${i + 10}/400/500`,
       isNew: Math.random() > 0.7, // ~30% sản phẩm là mới
