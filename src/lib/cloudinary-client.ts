@@ -3,6 +3,7 @@ interface SignatureResponse {
     timestamp: number;
     signature: string;
     api_key: string;
+    cloud_name: string; // Add cloud_name
 }
 
 // Helper to convert Base64 to Blob
@@ -36,10 +37,12 @@ export const uploadImageClient = async (fileStr: string, folder: string = 'ecomm
             throw new Error('Failed to get upload signature');
         }
 
-        const { timestamp, signature, api_key } = await signResponse.json() as SignatureResponse;
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const { timestamp, signature, api_key, cloud_name } = await signResponse.json() as SignatureResponse;
 
-        if (!cloudName || !api_key) {
+        // Use returned cloud_name OR env fallback
+        const finalCloudName = cloud_name || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+        if (!finalCloudName || !api_key) {
             throw new Error('Missing Cloudinary configuration');
         }
 
@@ -59,7 +62,7 @@ export const uploadImageClient = async (fileStr: string, folder: string = 'ecomm
         formData.append('signature', signature);
         formData.append('folder', folder);
 
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${finalCloudName}/image/upload`, {
             method: 'POST',
             body: formData,
         });
