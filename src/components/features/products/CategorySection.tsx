@@ -28,8 +28,8 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, categories }) 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
         {categories.map((category) => (
           <Link
-            href={`/products?category=${encodeURIComponent(category.name)}`}
-            key={category.name}
+            href={`/products?category=${category.slug}`}
+            key={category.slug}
             className="group text-center"
           >
             {/* Image Container: Cần có 'relative' để Image fill hoạt động */}

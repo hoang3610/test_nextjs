@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Product from '@/models/Product';
-import '@/models/Category'; // Ensure model is registered
+import Category from '@/models/Category'; // Ensure model is registered and imported
 import '@/models/Brand';    // Ensure model is registered
 
+
+
+function removeAccents(str: string) {
+    return str.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+}
 
 export async function GET(request: Request) {
     try {
@@ -13,9 +20,15 @@ export async function GET(request: Request) {
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');
         const search = searchParams.get('search') || '';
+        let category_slug = searchParams.get('category');
         const category_id = searchParams.get('category_id');
         const brand_id = searchParams.get('brand_id');
         const is_active = searchParams.get('is_active');
+
+        // Normalize category slug (remove accents & spaces -> -)
+        if (category_slug) {
+            category_slug = removeAccents(category_slug).replace(/\s+/g, '-');
+        }
 
         const query: any = {};
 
@@ -23,7 +36,29 @@ export async function GET(request: Request) {
             query.name = { $regex: search, $options: 'i' };
         }
 
-        if (category_id) {
+        // Logic xử lý Category Slug (Fuzzy Search)
+        if (category_slug) {
+            // Tìm tất cả category có slug chứa từ khóa (không phân biệt hoa thường)
+            const categories = await Category.find({
+                slug: { $regex: category_slug, $options: 'i' }
+            }).select('_id');
+
+            if (categories.length > 0) {
+                const categoryIds = categories.map(cat => cat._id);
+                query.category_id = { $in: categoryIds };
+            } else {
+                // Không tìm thấy category nào match thì trả về rỗng
+                return NextResponse.json({
+                    data: [],
+                    pagination: { total: 0, page, limit, totalPages: 0 }
+                });
+            }
+        }
+
+        // Fallback: nếu không có slug thì check category_id truyền trực tiếp
+        // Lưu ý: Nếu đã filter theo slug ở trên thì không overwrite bằng category_id nữa (hoặc tùy logic prioritize)
+        // Hiện tại code dưới sẽ chỉ chạy nếu query.category_id chưa được set (tức là không có slug hoặc slug tìm không ra - mà slug tìm ko ra đã return ở trên rồi)
+        if (!query.category_id && category_id) {
             query.category_id = category_id;
         }
 

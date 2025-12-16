@@ -17,6 +17,22 @@ const ProductContent = () => {
     category: initialCategory,
   });
 
+  // Sync state with URL params on navigation
+  useEffect(() => {
+    const categoryParam = searchParams.get('category') || '';
+    const searchParam = searchParams.get('search') || '';
+
+    setFilters(prev => {
+      // Only update if changed to avoid infinite loops if setFilters triggers something else
+      if (prev.category === categoryParam && prev.searchTerm === searchParam) return prev;
+      return {
+        ...prev,
+        category: categoryParam,
+        searchTerm: searchParam
+      };
+    });
+  }, [searchParams]);
+
   // State
   const [products, setProducts] = useState<any[]>([]); // Use appropriate type if possible
   const [isLoading, setIsLoading] = useState(false);
@@ -33,21 +49,11 @@ const ProductContent = () => {
         if (filters.searchTerm) {
           params.append('search', filters.searchTerm);
         }
-        if (filters.category) {
-          // If category filter is by name, logic might differ. 
-          // Assuming filter passes category ID or we use text search for now if API supports it.
-          // API currently supports category_id. If filters.category is a name, we might need a lookup or update API.
-          // For now, let's assume simple search matches category name via product search or skip strict category ID filtering if name is passed.
-          // Or purely rely on client side filtering if we fetch all? No, we should use API.
-          // Let's rely on 'search' param for generic search including category for now, or fetch all and filter client side?
-          // User request is "pour api products list out".
-          // Let's try to pass 'search' as general keyword.
-          params.append('search', filters.searchTerm);
-        }
 
-        // NOTE: If filters.category is passed, we might need to map it to category_id if API requires ID.
-        // Current FilterSidebar passes 'category' as string. 
-        // Let's simple fetch all for now and standard filtering, or improve later.
+        // Pass category slug to API
+        if (filters.category) {
+          params.append('category', filters.category);
+        }
 
         // const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1212';
         const res = await fetch(`/api/products?${params.toString()}`);
@@ -70,12 +76,8 @@ const ProductContent = () => {
 
           // Re-apply client filter if API doesn't support "category name" filter exactly?
           // filters.category matches name?
-          let finalProducts = mappedProducts;
-          if (filters.category) {
-            finalProducts = finalProducts.filter((p: any) => p.name.includes(filters.category));
-          }
-
-          setProducts(finalProducts);
+          // API now handles category filtering
+          setProducts(mappedProducts);
         }
       } catch (error) {
         console.error("Failed to fetch products", error);
