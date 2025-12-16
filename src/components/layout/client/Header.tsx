@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import Link from 'next/link';             // 2. Thay thế react-router-dom
 import { usePathname } from 'next/navigation'; // 3. Thay thế useLocation
 import Image from 'next/image';           // 4. Dùng Image tối ưu
+import { ShoppingCart } from 'lucide-react'; // Import ShoppingCart Icon
 
 // Giả định bạn đã copy các hooks này vào folder src/hooks hoặc src/context
 // Nhớ sửa đường dẫn import cho đúng với dự án mới nhé
@@ -18,6 +19,7 @@ const Header: React.FC = () => {
 
   const [isProductMenuOpen, setProductMenuOpen] = useState(false);
   const [isCartMenuOpen, setCartMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false); // Mobile Menu State
 
   const closeProductMenuTimer = useRef<NodeJS.Timeout | null>(null); // Fix type cho TypeScript
   const closeCartMenuTimer = useRef<NodeJS.Timeout | null>(null);
@@ -39,17 +41,42 @@ const Header: React.FC = () => {
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
 
         {/* 1. Logo */}
-        <div>
-          <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white">
+        {/* 1. Logo */}
+        {/* 1. Left - Hamburger (Mobile) & Logo (Desktop) */}
+        <div className="flex items-center gap-4">
+          {/* Mobile Menu Button (Visible md:hidden) */}
+          <button
+            className="md:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300"
+            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+
+          {/* Desktop Logo (Visible hidden md:flex) */}
+          <Link href="/" className="hidden md:flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
             </svg>
-            <span>HoangGia</span>
+            <span className="hidden sm:inline">HoangGia</span>
+          </Link>
+        </div>
+
+        {/* 1b. Mobile Logo (Absolute Center) */}
+        <div className="md:hidden absolute left-1/2 -translate-x-1/2">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-gray-800 dark:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+            </svg>
+            {/* Ẩn chữ trên mobile nếu muốn gọn hơn, hoặc để lại tùy ý. User yêu cầu centered logo giống cái user đưa */}
+            <span className="">HoangGia</span>
           </Link>
         </div>
 
         {/* 2. Menu điều hướng */}
-        <nav className="flex gap-8 h-full items-center">
+        {/* 2. Menu điều hướng (Desktop) */}
+        <nav className="hidden md:flex gap-8 h-full items-center">
           <Link href="/" className={getLinkClass('/')}>
             Trang chủ
           </Link>
@@ -130,8 +157,17 @@ const Header: React.FC = () => {
               closeCartMenuTimer.current = setTimeout(() => setCartMenuOpen(false), 150);
             }}
           >
-            <Link href="/cart" className="text-gray-800 dark:text-gray-200 flex items-center">
-              Giỏ hàng ({cartCount})
+            <Link href="/cart" className="text-gray-800 dark:text-gray-200 flex items-center gap-2">
+              {/* Mobile: Lucide Icon */}
+              <div className="relative md:hidden">
+                <ShoppingCart className="w-6 h-6" />
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full text-[10px] w-4 h-4 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              </div>
+
+              {/* Desktop: Text */}
+              <span className="hidden md:inline">Giỏ hàng ({cartCount})</span>
             </Link>
 
             {isCartMenuOpen && !isCartPage && (
@@ -177,20 +213,49 @@ const Header: React.FC = () => {
           </div>
 
           {user ? (
-            <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
               <span className="text-sm font-medium">Chào, {user.name}</span>
               <button onClick={logout} className="bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-700 transition-colors">
                 Đăng xuất
               </button>
             </div>
           ) : (
-            <Link href="/login" className="bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-700 dark:bg-blue-600 dark:hover:bg-blue-500 transition-colors">
+            <Link href="/login" className="hidden md:inline-flex bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-700 dark:bg-blue-600 dark:hover:bg-blue-500 transition-colors">
               Đăng nhập
             </Link>
           )}
         </div>
       </div>
-    </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg p-5 flex flex-col gap-4">
+          <Link href="/" className={getLinkClass('/')} onClick={() => setMobileMenuOpen(false)}>
+            Trang chủ
+          </Link>
+          <Link href="/products" className={getLinkClass('/products')} onClick={() => setMobileMenuOpen(false)}>
+            Sản phẩm
+          </Link>
+          <Link href="/about" className={getLinkClass('/about')} onClick={() => setMobileMenuOpen(false)}>
+            Giới thiệu
+          </Link>
+          <Link href="/booking" className={getLinkClass('/booking')} onClick={() => setMobileMenuOpen(false)}>
+            Đặt lịch
+          </Link>
+          <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
+          {user ? (
+            <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="text-left text-red-600 font-medium">
+              Đăng xuất
+            </button>
+          ) : (
+            <Link href="/login" className="text-blue-600 font-medium" onClick={() => setMobileMenuOpen(false)}>
+              Đăng nhập
+            </Link>
+          )}
+        </div>
+      )}
+
+    </header >
   );
 };
 

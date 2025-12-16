@@ -164,8 +164,9 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Left: Images */}
                 <div className="w-full md:w-1/2 flex flex-col gap-4 border border-gray-200 rounded-lg p-4">
+                    {/* DESKTOP Main Image */}
                     <div
-                        className="relative w-full aspect-square rounded-lg overflow-hidden bg-white cursor-pointer group"
+                        className="hidden md:block relative w-full aspect-square rounded-lg overflow-hidden bg-white cursor-pointer group"
                         onClick={() => setIsLightboxOpen(true)}
                     >
                         <Image
@@ -173,9 +174,29 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                             alt={product.name}
                             fill
                             className="object-contain group-hover:scale-105 transition-transform duration-500"
-                            sizes="(max-width: 768px) 100vw, 50vw"
+                            sizes="50vw"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+                    </div>
+
+                    {/* MOBILE Main Image */}
+                    <div
+                        className="md:hidden relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-white cursor-pointer group"
+                        onClick={() => setIsLightboxOpen(true)}
+                    >
+                        <Image
+                            // LOGIC: If active image is the default thumbnail AND we have a mobile image, show mobile image.
+                            // Otherwise (user clicked a thumbnail), show the selected image.
+                            src={
+                                (mainImage === product.thumbnail_url && product.image_mobile_urls?.length > 0)
+                                    ? product.image_mobile_urls[0]
+                                    : (mainImage || 'https://placehold.co/600')
+                            }
+                            alt={`${product.name} - Mobile`}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            sizes="100vw"
+                        />
                     </div>
                     {/* Thumbnails */}
                     <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">

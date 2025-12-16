@@ -36,7 +36,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
            sizes: Giúp trình duyệt tải ảnh kích thước phù hợp với màn hình
         */}
         <Image
-          src={product.imageUrl}
+          src={product.imageUrl || 'https://placehold.co/600'}
           alt={product.name}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
