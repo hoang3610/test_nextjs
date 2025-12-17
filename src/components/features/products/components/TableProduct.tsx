@@ -21,6 +21,7 @@ interface TableProductProps {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   onChangeStatus: (product: Product) => void;
+  onToggleFeatured: (product: Product) => void;
 }
 
 const TableProduct: React.FC<TableProductProps> = ({
@@ -34,6 +35,7 @@ const TableProduct: React.FC<TableProductProps> = ({
   onEdit,
   onDelete,
   onChangeStatus,
+  onToggleFeatured,
 }) => {
   // --- Helpers ---
   const formatCurrency = (value: number) =>
@@ -76,6 +78,25 @@ const TableProduct: React.FC<TableProductProps> = ({
         <span className={`px-2 py-1 text-xs rounded-full ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
           {item.is_active ? 'Hoạt động' : 'Ẩn'}
         </span>
+      ),
+    },
+    {
+      header: 'Nổi bật',
+      className: 'min-w-[100px] text-center',
+      render: (item) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFeatured(item);
+          }}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${item.is_featured ? 'bg-green-600' : 'bg-gray-200'
+            }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.is_featured ? 'translate-x-6' : 'translate-x-1'
+              }`}
+          />
+        </button>
       ),
     },
     {

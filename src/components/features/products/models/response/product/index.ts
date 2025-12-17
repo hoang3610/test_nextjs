@@ -35,6 +35,7 @@ export interface ProductResponse {
     brand_id?: string | { _id: string, name: string };
     product_type?: number;
     is_active: boolean;
+    is_featured?: boolean;
     has_variants: boolean;
     attributes_summary?: AttributeSummaryResponse[];
     skus: ProductSkuResponse[];

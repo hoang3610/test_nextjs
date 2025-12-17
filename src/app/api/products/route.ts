@@ -70,6 +70,11 @@ export async function GET(request: Request) {
             query.is_active = is_active === 'true';
         }
 
+        const is_featured = searchParams.get('is_featured');
+        if (is_featured !== null) {
+            query.is_featured = is_featured === 'true';
+        }
+
         const skip = (page - 1) * limit;
 
         const products = await Product.find(query)

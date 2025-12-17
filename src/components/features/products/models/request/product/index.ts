@@ -39,6 +39,7 @@ export interface ProductRequest {
     brand_id?: string; // ObjectId
 
     is_active: boolean;
+    is_featured: boolean;
     has_variants: boolean;
 
     attributes_summary?: AttributeSummaryRequest[];

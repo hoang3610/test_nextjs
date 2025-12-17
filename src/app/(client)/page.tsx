@@ -78,13 +78,45 @@ async function getNewProducts(days: number = 7, limit: number = 4) {
   }
 }
 
+// 2c. Fetch Featured Products (Server Logic)
+async function getFeaturedProducts(limit: number = 4) {
+  try {
+    noStore();
+    await dbConnect();
+
+    const products = await Product.find({
+      is_active: true,
+      is_featured: true
+    })
+      .sort({ updatedAt: -1 })
+      .limit(limit)
+      .populate('category_id', 'name slug')
+      .lean();
+
+    return JSON.parse(JSON.stringify(products)).map((item: any) => ({
+      id: item._id,
+      name: item.name,
+      slug: item.slug,
+      price: item.skus?.[0]?.price || 0,
+      originalPrice: item.skus?.[0]?.original_price || undefined,
+      imageUrl: item.thumbnail_url || item.image_urls?.[0] || '',
+      isNew: false,
+      isFeatured: true,
+      isFlashSale: false,
+    }));
+  } catch (error) {
+    console.error('Error fetching featured products:', error);
+    return [];
+  }
+}
+
 // 3. Server Component (Async function)
 export default async function HomePage() {
   const categories = await getData();
-  const newProducts = await getNewProducts(7, 4); // Fetch 4 new products from DB
+  const newProducts = await getNewProducts(7, 4);
+  const featuredProducts = await getFeaturedProducts(4);
 
   // Mock data for other sections (for now)
-  const featuredProducts = mockProducts.filter(p => p.isFeatured);
   const flashSaleProducts = mockProducts.filter(p => p.isFlashSale);
 
   return (

@@ -46,6 +46,7 @@ const ProductIndexPage = () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
+        t: new Date().getTime().toString(), // Cache busting
       });
 
       const response = await fetch(`/api/products?${params.toString()}`);
@@ -61,6 +62,7 @@ const ProductIndexPage = () => {
           category_id: item.category_id,
           brand_id: item.brand_id,
           is_active: item.is_active,
+          is_featured: item.is_featured,
           has_variants: item.has_variants,
           skus: item.skus,
           attributes_summary: item.attributes_summary,
@@ -165,6 +167,7 @@ const ProductIndexPage = () => {
         category_id: newData.category_id,
         product_type: newData.product_type,
         is_active: newData.is_active,
+        is_featured: newData.is_featured || false,
         thumbnail_url: finalImageUrls?.[0] || '',
         image_urls: finalImageUrls,
         image_mobile_urls: finalMobileImageUrls,
@@ -304,6 +307,7 @@ const ProductIndexPage = () => {
         category_id: typeof editedData.category_id === 'string' ? editedData.category_id : editedData.category_id?._id,
         brand_id: typeof editedData.brand_id === 'string' ? editedData.brand_id : editedData.brand_id?._id,
         is_active: editedData.is_active,
+        is_featured: editedData.is_featured,
         image_urls: finalImageUrls,
         image_mobile_urls: finalMobileImageUrls,
         has_variants: editedData.has_variants,
@@ -405,6 +409,27 @@ const ProductIndexPage = () => {
     });
   };
 
+  const handleToggleFeatured = async (product: any) => {
+    try {
+      const response = await fetch(`/api/products/${product.id}/change-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_featured: !product.is_featured })
+      });
+
+      if (response.ok) {
+        showToast({ message: "Cập nhật trạng thái nổi bật thành công!", type: "success" });
+        fetchProducts();
+      } else {
+        const data = await response.json();
+        showToast({ message: `Lỗi: ${data.error}`, type: "error" });
+      }
+    } catch (e) {
+      console.error(e);
+      showToast({ message: "Lỗi kết nối", type: "error" });
+    }
+  };
+
   const handleCloseModals = () => {
     setCreateModalOpen(false);
     setEditModalOpen(false);
@@ -450,6 +475,7 @@ const ProductIndexPage = () => {
 
   return (
     <>
+      {/* Debug Products State */}
       <TableProduct
         products={products}
         currentPage={currentPage}
@@ -461,6 +487,7 @@ const ProductIndexPage = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onChangeStatus={handleChangeStatus}
+        onToggleFeatured={handleToggleFeatured}
       />
       <CreateProduct
         isOpen={isCreateModalOpen}
