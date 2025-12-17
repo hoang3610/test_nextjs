@@ -236,7 +236,7 @@ const EditCategory: React.FC<EditCategoryProps> = ({ isOpen, onClose, onSave, ca
             padding: 0.5rem 0.75rem;
             border: 1px solid #e2e8f0;
             border-radius: 0.375rem;
-            font-size: 0.875rem;
+            font-size: 16px;
             outline: none;
             transition: border-color 0.15s ease-in-out;
           }

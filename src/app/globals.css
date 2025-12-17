@@ -124,4 +124,8 @@
     @apply text-sm font-bold text-gray-700 mb-2 block uppercase;
   }
 
+  /* Fix iOS auto-zoom for Quill Editor */
+  .ql-container .ql-editor {
+    font-size: 16px !important;
+  }
 }
