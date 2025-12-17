@@ -67,6 +67,18 @@ export async function POST(
             }
         }
 
+        // Logic Min/Max Price Update
+        // Note: If updating SKUs, we should re-calculate. If body.skus is present, use it.
+        // If not, we might need to fetch existing SKUs?
+        // Usually frontend sends the full object. Assuming body contains skus if they are being updated.
+        if (body.skus && Array.isArray(body.skus) && body.skus.length > 0) {
+            const prices = body.skus.map((sku: any) => sku.price).filter((p: any) => typeof p === 'number');
+            if (prices.length > 0) {
+                body.min_price = Math.min(...prices);
+                body.max_price = Math.max(...prices);
+            }
+        }
+
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
             body,

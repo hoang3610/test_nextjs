@@ -48,4 +48,6 @@ export interface ProductResponse {
     stock?: number;
     image_urls?: string[];
     image_mobile_urls?: string[];
+    min_price?: number;
+    max_price?: number;
 }

@@ -46,28 +46,30 @@ const TableProduct: React.FC<TableProductProps> = ({
     {
       header: 'Sản phẩm',
       className: 'min-w-[250px]',
-      render: (item) => (
-        <div className="flex items-center gap-3">
-          <img
-            src={item.thumbnail_url || 'https://placehold.co/40'}
-            alt={item.name}
-            className="w-10 h-10 rounded object-cover bg-gray-100"
-          />
-          <div>
-            <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
-            {/* Display first SKU as a representative if available */}
-            <p className="text-xs text-gray-500">{item.skus?.[0]?.sku}</p>
+      render: (item) => {
+        const bestSku = item.skus?.find(s => s.price === item.min_price) || item.skus?.[0];
+        return (
+          <div className="flex items-center gap-3">
+            <img
+              src={item.thumbnail_url || 'https://placehold.co/40'}
+              alt={item.name}
+              className="w-10 h-10 rounded object-cover bg-gray-100"
+            />
+            <div>
+              <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
+              {/* Display best SKU */}
+              <p className="text-xs text-gray-500">{bestSku?.sku}</p>
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       header: 'Giá bán',
       className: 'min-w-[120px]',
       render: (item) => {
-        // Display price of first SKU or a range if variants exist? 
-        // For simplicity, showing first SKU price
-        const price = item.skus?.[0]?.price || 0;
+        const bestSku = item.skus?.find(s => s.price === item.min_price) || item.skus?.[0];
+        const price = bestSku?.price || 0;
         return <div className="font-medium text-gray-700">{formatCurrency(price)}</div>;
       },
     },

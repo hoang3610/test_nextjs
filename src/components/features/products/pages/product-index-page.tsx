@@ -67,6 +67,8 @@ const ProductIndexPage = () => {
           skus: item.skus,
           attributes_summary: item.attributes_summary,
           description: item.description,
+          min_price: item.min_price,
+          max_price: item.max_price,
         }));
 
         setProducts(mappedProducts);

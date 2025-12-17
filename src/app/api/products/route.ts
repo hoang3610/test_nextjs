@@ -125,6 +125,15 @@ export async function POST(request: Request) {
             );
         }
 
+        // Logic Min/Max Price
+        if (body.skus && Array.isArray(body.skus) && body.skus.length > 0) {
+            const prices = body.skus.map((sku: any) => sku.price).filter((p: any) => typeof p === 'number');
+            if (prices.length > 0) {
+                body.min_price = Math.min(...prices);
+                body.max_price = Math.max(...prices);
+            }
+        }
+
         const product = await Product.create(body);
 
         return NextResponse.json(product, { status: 201 });
