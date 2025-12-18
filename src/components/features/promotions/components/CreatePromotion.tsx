@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Upload, Check, X } from 'lucide-react';
 import ImageUploading, { ErrorsType, ImageListType } from 'react-images-uploading';
 
@@ -12,6 +12,33 @@ import IconEdit from '@/components/icons/icon-edit';
 import IconX from '@/components/icons/icon-x';
 import ImageCustom from '@/components/custom/image-custom';
 import ProgressBar from '@/components/custom/progress-bar';
+import { SelectedItemsTable, Column as TableColumn } from '@/components/custom/selected-items-table';
+import { MultiSelectModal, Column as ModalColumn } from '@/components/custom/multi-select-modal';
+import { Table } from '@/components/custom/table';
+
+// --- MOCK DATA ---
+interface Product {
+    id: number;
+    name: string;
+    sku: string;
+    price: number;
+    stock: number;
+    image: string;
+}
+
+const MOCK_PRODUCTS: Product[] = Array.from({ length: 50 }, (_, i) => ({
+    id: i + 1,
+    name: `Sản phẩm mẫu ${i + 1}`,
+    sku: `SKU_${String(i + 1).padStart(3, '0')}`,
+    price: 100000 + (i * 10000),
+    stock: Math.floor(Math.random() * 100),
+    image: `https://picsum.photos/seed/${i + 1}/100`
+}));
+
+interface PromotionItemConfig {
+    discountPercent: number;
+    discountQuantity: number;
+}
 
 // --- Props Interface ---
 interface CreatePromotionProps {
@@ -36,9 +63,129 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
     const [currentStep, setCurrentStep] = useState(0);
     const steps = [
         { id: 1, title: 'Thông tin chung' },
-        { id: 2, title: 'Sản phẩm áp dụng' },
-        { id: 3, title: 'Xác nhận' }
+        { id: 2, title: 'Chọn sản phẩm' },
+        { id: 3, title: 'Cấu hình giảm giá' },
+        { id: 4, title: 'Hoàn tất' }
     ];
+
+    // --- Product Selection State ---
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [selectedProductIds, setSelectedProductIds] = useState<(number | string)[]>([]);
+    const [promotionItems, setPromotionItems] = useState<Record<number, PromotionItemConfig>>({});
+
+    // Update promotionItems when inputs change
+    const handlePromotionItemChange = (productId: number, field: keyof PromotionItemConfig, value: number) => {
+        setPromotionItems(prev => ({
+            ...prev,
+            [productId]: {
+                ...prev[productId],
+                [field]: value
+            }
+        }));
+    };
+
+    // Derived Lists
+    const selectedProducts = useMemo(() =>
+        MOCK_PRODUCTS.filter(p => selectedProductIds.includes(p.id)),
+        [selectedProductIds]
+    );
+
+    const availableProducts = useMemo(() =>
+        MOCK_PRODUCTS.filter(p => !selectedProductIds.includes(p.id)),
+        [selectedProductIds]
+    );
+
+    // --- Columns Configuration ---
+    const productModalColumns: ModalColumn<Product>[] = [
+        {
+            header: 'Sản phẩm',
+            accessor: (item) => (
+                <div className="flex items-center gap-3">
+                    <img src={item.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={item.name} />
+                    <div>
+                        <div className="font-medium text-gray-900 line-clamp-1">{item.name}</div>
+                        <div className="text-xs text-gray-500">{item.sku}</div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'Giá',
+            className: 'text-right font-mono text-gray-600',
+            accessor: (item) => `${item.price.toLocaleString()}₫`
+        },
+        {
+            header: 'Kho',
+            className: 'text-center',
+            accessor: (item) => item.stock
+        }
+    ];
+
+    const productTableColumns: TableColumn<Product>[] = [
+        {
+            header: 'Thông tin sản phẩm',
+            render: (p) => (
+                <div className="flex items-center gap-3">
+                    <img src={p.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={p.name} />
+                    <div>
+                        <div className="font-medium text-gray-900 line-clamp-1">{p.name}</div>
+                        <div className="text-xs text-gray-500">{p.sku}</div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'Giá bán',
+            className: 'text-right font-mono',
+            render: (p) => `${p.price.toLocaleString()}₫`
+        },
+        {
+            header: 'Tồn kho',
+            className: 'text-center',
+            render: (p) => p.stock
+        }
+    ];
+
+    const renderProductMobile = (p: Product, onRemove: (item: Product) => void) => (
+        <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-start gap-3 relative">
+            <img src={p.image} className="w-16 h-16 rounded border object-cover bg-gray-50" alt="" />
+            <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight mb-1">{p.name}</div>
+                <div className="text-xs text-gray-500 mb-2">{p.sku}</div>
+                <div className="flex justify-between items-end">
+                    <div className="text-[#1890ff] font-semibold text-sm">{p.price.toLocaleString()}₫</div>
+                    <div className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Kho: {p.stock}</div>
+                </div>
+            </div>
+            <button
+                onClick={() => onRemove(p)}
+                className="absolute top-2 right-2 p-1.5 text-gray-300 hover:text-red-500"
+            >
+                <X size={16} />
+            </button>
+        </div>
+    );
+
+    const resetForm = useCallback(() => {
+        setFormData({
+            name: '',
+            description: '',
+            thumbnail_url: '',
+            status: 'DRAFT',
+            is_auto_active: true,
+            start_at: '',
+            end_at: ''
+        });
+        setCurrentStep(0);
+        setSelectedProductIds([]);
+        setPromotionItems({});
+    }, []);
+
+    useEffect(() => {
+        if (isOpen) {
+            resetForm();
+        }
+    }, [isOpen, resetForm]);
 
     // --- Handlers ---
     const handleSaveClick = () => {
@@ -68,8 +215,7 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
         onSave(payload);
         onClose();
         // Reset form
-        setFormData({ name: '', description: '', thumbnail_url: '', status: 'DRAFT', is_auto_active: true, start_at: '', end_at: '' });
-        setCurrentStep(0);
+        resetForm();
     };
 
     // --- Render Helpers ---
@@ -301,18 +447,118 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
                 )}
 
                 {currentStep === 1 && (
-                    <div className="panel bg-white rounded-lg p-8 text-center text-gray-500">
-                        <p>Chức năng thêm sản phẩm sẽ được phát triển ở bước tiếp theo.</p>
+                    <div className="h-[500px] -mx-4 sm:mx-0">
+                        <SelectedItemsTable
+                            data={selectedProducts}
+                            columns={productTableColumns}
+                            onRemove={(item) => setSelectedProductIds(prev => prev.filter(id => id !== item.id))}
+                            onAdd={() => setIsProductModalOpen(true)}
+                            title="Sản phẩm áp dụng"
+                            emptyTitle="Chưa có sản phẩm nào"
+                            emptyDescription="Vui lòng chọn sản phẩm để áp dụng khuyến mãi"
+                            mobileRowRender={renderProductMobile}
+                        />
                     </div>
                 )}
-
                 {currentStep === 2 && (
-                    <div className="panel bg-white rounded-lg p-8 text-center text-gray-500">
-                        <p>Vui lòng kiểm tra lại thông tin trước khi hoàn tất.</p>
-                        <div className="mt-4 text-left max-w-md mx-auto bg-gray-50 p-4 rounded text-sm">
-                            <p><strong>Tên:</strong> {values.name}</p>
-                            <p><strong>Bắt đầu:</strong> {String(values.start_at)}</p>
-                            <p><strong>Kết thúc:</strong> {String(values.end_at)}</p>
+                    <div className="h-[500px] -mx-4 sm:mx-0">
+                        <Table
+                            data={selectedProducts}
+                            columns={[
+                                {
+                                    header: 'Sản phẩm',
+                                    render: (p: Product) => (
+                                        <div className="flex items-center gap-3">
+                                            <img src={p.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={p.name} />
+                                            <div>
+                                                <div className="font-medium text-gray-900 line-clamp-1">{p.name}</div>
+                                                <div className="text-xs text-gray-500">{p.sku}</div>
+                                            </div>
+                                        </div>
+                                    )
+                                },
+                                {
+                                    header: 'Giá gốc',
+                                    className: 'text-right font-mono',
+                                    render: (p: Product) => `${p.price.toLocaleString()}₫`
+                                },
+                                {
+                                    header: 'Giá giảm (%)',
+                                    className: 'w-32',
+                                    render: (p: Product) => (
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 text-right pr-8"
+                                                placeholder="0"
+                                                value={promotionItems[p.id]?.discountPercent || ''}
+                                                onChange={(e) => {
+                                                    const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                                                    handlePromotionItemChange(p.id, 'discountPercent', val);
+                                                }}
+                                            />
+                                            <span className="absolute right-3 top-1.5 text-gray-500">%</span>
+                                        </div>
+                                    )
+                                },
+                                {
+                                    header: 'Sau giảm',
+                                    className: 'text-right font-mono',
+                                    render: (p: Product) => {
+                                        const discountPercent = promotionItems[p.id]?.discountPercent || 0;
+                                        const discountedPrice = p.price * (1 - discountPercent / 100);
+                                        return <span className="text-red-600 font-bold">{discountedPrice.toLocaleString()}₫</span>;
+                                    }
+                                },
+                                {
+                                    header: 'SL giảm',
+                                    className: 'w-32',
+                                    render: (p: Product) => (
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 text-center"
+                                            placeholder="SL"
+                                            value={promotionItems[p.id]?.discountQuantity ?? p.stock}
+                                            onChange={(e) => handlePromotionItemChange(p.id, 'discountQuantity', Number(e.target.value))}
+                                        />
+                                    )
+                                }
+                            ]}
+                            customHeader={(
+                                <div className="p-4 border-b border-gray-200 bg-white">
+                                    <h3 className="text-lg font-bold text-gray-800">Thiết lập giá & kho</h3>
+                                    <p className="text-sm text-gray-500">{selectedProducts.length} sản phẩm đã chọn</p>
+                                </div>
+                            )}
+                        />
+                    </div>
+                )}
+                {currentStep === 3 && (
+                    <div className="panel flex flex-col items-center justify-center p-6 sm:p-12 animate-in zoom-in-95 duration-300 h-full">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6 shadow-sm">
+                            <Check size={32} strokeWidth={3} className="sm:w-10 sm:h-10" />
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Đã sẵn sàng tạo!</h2>
+                        <p className="text-gray-500 text-center max-w-md mb-8 text-sm sm:text-base">
+                            Bạn đang tạo chiến dịch với <strong>{selectedProducts.length} sản phẩm</strong>. Vui lòng kiểm tra lại.
+                        </p>
+
+                        <div className="bg-gray-50 rounded-lg p-4 sm:p-6 w-full max-w-md border border-gray-200 space-y-3">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">Tên chiến dịch:</span>
+                                <span className="font-medium text-gray-900 text-right">{formData.name || "Chưa đặt tên"}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">Tổng sản phẩm:</span>
+                                <span className="font-medium text-gray-900">{selectedProducts.length}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">Trạng thái:</span>
+                                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">Chờ chạy</span>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -334,7 +580,7 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
         `}</style>
             </div>
         );
-    }, [formData, currentStep]);
+    }, [formData, currentStep, selectedProducts, productTableColumns, renderProductMobile, renderField, renderRowImageUploading, promotionItems]);
 
     const renderModalFooter = () => (
         <div className="flex gap-2 w-full justify-end">
@@ -356,16 +602,30 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
     );
 
     return (
-        <ModalCustom
-            isOpen={isOpen}
-            onClose={onClose}
-            titleModal="TẠO CHIẾN DỊCH KHUYẾN MÃI"
-            modalSize="90%"
-            bodyModal={renderModalBody()}
-            footerModal={renderModalFooter()}
-            centered
-            customHeader={renderCustomHeader()}
-        />
+        <>
+            <ModalCustom
+                isOpen={isOpen}
+                onClose={onClose}
+                titleModal="TẠO CHIẾN DỊCH KHUYẾN MÃI"
+                modalSize="90%"
+                bodyModal={renderModalBody()}
+                footerModal={renderModalFooter()}
+                centered
+                customHeader={renderCustomHeader()}
+            />
+
+            <MultiSelectModal
+                isOpen={isProductModalOpen}
+                onClose={() => setIsProductModalOpen(false)}
+                onConfirm={(newIds) => setSelectedProductIds(prev => [...prev, ...newIds])}
+                data={availableProducts}
+                initialSelectedIds={[]}
+                columns={productModalColumns}
+                title="Chọn sản phẩm áp dụng"
+                description="Tìm kiếm theo tên hoặc mã SKU"
+                searchKeys={['name', 'sku']}
+            />
+        </>
     );
 };
 
