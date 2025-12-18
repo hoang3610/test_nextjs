@@ -17,6 +17,20 @@ import { MultiSelectModal, Column as ModalColumn } from '@/components/custom/mul
 import { Table } from '@/components/custom/table';
 
 // --- MOCK DATA ---
+interface ProductSku {
+    id: string; // Required for MultiSelectModal
+    sku: string;
+    price: number;
+    original_price?: number;
+    stock: number;
+    image_url?: string;
+    weight?: number;
+    dimensions?: { l: number; w: number; h: number };
+    is_default?: boolean;
+    is_active?: boolean;
+    attributes?: { code: string; name: string; value: string; meta_value?: string }[];
+}
+
 interface Product {
     id: number;
     name: string;
@@ -24,6 +38,20 @@ interface Product {
     price: number;
     stock: number;
     image: string;
+    // New fields
+    sold_count: number;
+    view_count: number;
+    is_featured: boolean;
+    min_price: number;
+    max_price: number;
+    sale_start_at: string | null;
+    sale_end_at: string | null;
+    is_new_arrival: boolean;
+    // Arrays
+    image_urls: string[];
+    image_mobile_urls: string[];
+    attributes_summary: { code: string; name: string; values: string[] }[];
+    skus: ProductSku[];
 }
 
 const MOCK_PRODUCTS: Product[] = Array.from({ length: 50 }, (_, i) => ({
@@ -32,7 +60,39 @@ const MOCK_PRODUCTS: Product[] = Array.from({ length: 50 }, (_, i) => ({
     sku: `SKU_${String(i + 1).padStart(3, '0')}`,
     price: 100000 + (i * 10000),
     stock: Math.floor(Math.random() * 100),
-    image: `https://picsum.photos/seed/${i + 1}/100`
+    image: `https://picsum.photos/seed/${i + 1}/100`,
+    sold_count: Math.floor(Math.random() * 1000),
+    view_count: Math.floor(Math.random() * 5000),
+    is_featured: Math.random() > 0.8,
+    min_price: 100000 + (i * 10000),
+    max_price: 100000 + (i * 10000) + 50000,
+    sale_start_at: null,
+    sale_end_at: null,
+    is_new_arrival: Math.random() > 0.9,
+    image_urls: [`https://picsum.photos/seed/${i + 1}/500`, `https://picsum.photos/seed/${i + 100}/500`],
+    image_mobile_urls: [`https://picsum.photos/seed/${i + 1}/300`],
+    attributes_summary: [
+        { code: 'color', name: 'Màu sắc', values: ['Đỏ', 'Xanh'] },
+        { code: 'size', name: 'Kích thước', values: ['S', 'M', 'L'] }
+    ],
+    skus: [
+        {
+            id: `SKU_${String(i + 1).padStart(3, '0')}_1`,
+            sku: `SKU_${String(i + 1).padStart(3, '0')}_1`,
+            price: 100000 + (i * 10000),
+            stock: 50,
+            image_url: `https://picsum.photos/seed/${i + 1}/100`,
+            attributes: [{ code: 'color', name: 'Màu sắc', value: 'Đỏ' }]
+        },
+        {
+            id: `SKU_${String(i + 1).padStart(3, '0')}_2`,
+            sku: `SKU_${String(i + 1).padStart(3, '0')}_2`,
+            price: 100000 + (i * 10000),
+            stock: 50,
+            image_url: `https://picsum.photos/seed/${i + 1}/100`,
+            attributes: [{ code: 'color', name: 'Màu sắc', value: 'Xanh' }]
+        }
+    ]
 }));
 
 interface PromotionItemConfig {
@@ -85,15 +145,83 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
     };
 
     // Derived Lists
-    const selectedProducts = useMemo(() =>
-        MOCK_PRODUCTS.filter(p => selectedProductIds.includes(p.id)),
-        [selectedProductIds]
-    );
+    const selectedProducts = useMemo(() => {
+        const result: any[] = [];
+        MOCK_PRODUCTS.forEach(p => {
+            // 1. Check if the product itself is selected (for simple products or full selection)
+            if (selectedProductIds.includes(p.id)) {
+                if (p.skus && p.skus.length > 0) {
+                    // If parent is selected, it implies all SKUs are selected (or user selected parent row)
+                    // However, in our MultiSelectModal logic, selecting parent also selects all SKUs.
+                    // So we might find individual SKUs in the list too.
+                    // User wants "put all selected SKUs to table".
+                    // So if parent is selected, effectively all its SKUs are selected.
+                    // We should add all SKUs.
+                    p.skus.forEach(s => {
+                        result.push({
+                            ...s,
+                            name: `${p.name} - ${s.attributes?.map(a => a.value).join(' - ')}`,
+                            image: s.image_url || p.image,
+                            // Ensure price/stock are top level for table
+                        });
+                    });
+                } else {
+                    // Simple product
+                    result.push(p);
+                }
+            } else {
+                // 2. Check for individual SKUs if parent is not explicitly selected
+                // (Though our Modal logic selects parent if all SKUs are selected, so this covers partial)
+                if (p.skus) {
+                    const selectedSkus = p.skus.filter(s => selectedProductIds.includes(s.id));
+                    selectedSkus.forEach(s => {
+                        result.push({
+                            ...s,
+                            name: `${p.name} - ${s.attributes?.map(a => a.value).join(' - ')}`,
+                            image: s.image_url || p.image,
+                        });
+                    });
+                }
+            }
+        });
 
-    const availableProducts = useMemo(() =>
-        MOCK_PRODUCTS.filter(p => !selectedProductIds.includes(p.id)),
-        [selectedProductIds]
-    );
+        // Remove duplicates just in case logic overlaps (e.g. parent selected and SKUs selected)
+        // We prefer SKU level items if variants exist.
+        const unique = new Map();
+        result.forEach(item => {
+            // For simple product, ID is number. For enriched SKU, ID is string.
+            unique.set(item.id, item);
+        });
+        return Array.from(unique.values());
+    }, [selectedProductIds]);
+
+    const availableProducts = useMemo(() => {
+        return MOCK_PRODUCTS.map(p => {
+            // Clone to avoid mutation
+            const product = { ...p };
+
+            // Check if product itself is selected (excluded completely)
+            if (selectedProductIds.includes(product.id)) {
+                // Return null or mark for filtering
+                // Actually, if it has SKUs, maybe some are NOT selected? 
+                // But if ID is in selectedProductIds, it means "All" or "Parent" selected.
+                // Logic says: if "choose all sku then remove product too".
+                // Our Modal logic: All SKUs selected -> Parent ID selected.
+                return null;
+            }
+
+            // Filter SKUs
+            if (product.skus && product.skus.length > 0) {
+                const remainingSkus = product.skus.filter(s => !selectedProductIds.includes(s.id));
+                if (remainingSkus.length === 0) {
+                    return null; // No SKUs left
+                }
+                product.skus = remainingSkus;
+            }
+
+            return product;
+        }).filter(Boolean) as Product[];
+    }, [selectedProductIds]);
 
     // --- Columns Configuration ---
     const productModalColumns: ModalColumn<Product>[] = [
@@ -118,6 +246,31 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
             header: 'Kho',
             className: 'text-center',
             accessor: (item) => item.stock
+        }
+    ];
+
+    const skuModalColumns: ModalColumn<ProductSku>[] = [
+        {
+            header: '',
+            accessor: (sku) => (
+                <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span className="font-medium text-gray-700">
+                        {sku.attributes?.map(a => a.value).join(' - ') || 'Mặc định'}
+                    </span>
+                    <span className="text-gray-400 text-xs">#{sku.sku}</span>
+                </div>
+            )
+        },
+        {
+            header: '',
+            className: 'text-right font-mono text-gray-600',
+            accessor: (sku) => `${sku.price.toLocaleString()}₫`
+        },
+        {
+            header: '',
+            className: 'text-center text-gray-500',
+            accessor: (sku) => sku.stock
         }
     ];
 
@@ -451,7 +604,26 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
                         <SelectedItemsTable
                             data={selectedProducts}
                             columns={productTableColumns}
-                            onRemove={(item) => setSelectedProductIds(prev => prev.filter(id => id !== item.id))}
+                            onRemove={(item) => setSelectedProductIds(prev => {
+                                // 1. If we are removing a simple product or an SKU that is directly in the list
+                                if (prev.includes(item.id)) {
+                                    return prev.filter(id => id !== item.id);
+                                }
+
+                                // 2. If we are removing an SKU but its parent is selected (e.g. parent ID in list)
+                                // We need to find the parent
+                                // SKU IDs are always strings. If item.id is a number (Product ID), this loop won't match anyway.
+                                const parent = MOCK_PRODUCTS.find(p => p.skus && p.skus.some(s => s.id === String(item.id)));
+                                if (parent && prev.includes(parent.id)) {
+                                    // Remove parent ID
+                                    let newIds = prev.filter(id => id !== parent.id);
+                                    // Add ALL other SKUs of this parent
+                                    const otherSkus = parent.skus?.filter(s => s.id !== String(item.id)).map(s => s.id) || [];
+                                    return [...newIds, ...otherSkus];
+                                }
+
+                                return prev;
+                            })}
                             onAdd={() => setIsProductModalOpen(true)}
                             title="Sản phẩm áp dụng"
                             emptyTitle="Chưa có sản phẩm nào"
@@ -624,6 +796,8 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
                 title="Chọn sản phẩm áp dụng"
                 description="Tìm kiếm theo tên hoặc mã SKU"
                 searchKeys={['name', 'sku']}
+                subDataKey="skus"
+                subColumns={skuModalColumns}
             />
         </>
     );

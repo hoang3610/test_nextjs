@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Search, Check, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 
 export interface Column<T> {
     header: string;
@@ -25,7 +25,7 @@ interface MultiSelectModalProps<T extends { id: number | string }> {
     onSearch?: (term: string) => void; // Async search callback
 }
 
-export const MultiSelectModal = <T extends { id: number | string }>({
+export const MultiSelectModal = <T extends { id: number | string }, S extends { id: number | string } = any>({
     isOpen,
     onClose,
     onConfirm,
@@ -38,10 +38,26 @@ export const MultiSelectModal = <T extends { id: number | string }>({
     page,
     totalPage,
     onPageChange,
-    onSearch
-}: MultiSelectModalProps<T>) => {
+    onSearch,
+    // New props for sub-items
+    subDataKey,
+    subColumns
+}: MultiSelectModalProps<T> & {
+    subDataKey?: keyof T;
+    subColumns?: Column<S>[];
+}) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [tempSelectedIds, setTempSelectedIds] = useState<(number | string)[]>([]);
+    const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
+
+    const toggleExpand = (id: number | string) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -79,25 +95,103 @@ export const MultiSelectModal = <T extends { id: number | string }>({
     const areAllSelected = filteredData.length > 0 && filteredData.every(item => tempSelectedIds.includes(item.id));
 
     const toggleSelect = (id: number | string) => {
-        setTempSelectedIds(prev =>
-            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-        );
+        setTempSelectedIds(prev => {
+            const isSelected = prev.includes(id);
+            let newSelected = [...prev];
+
+            // 1. Check if it's a parent
+            const parentItem = data.find(item => item.id === id);
+            if (parentItem) {
+                // It is a parent
+                const subItems = (subDataKey && Array.isArray(parentItem[subDataKey]) ? parentItem[subDataKey] : []) as any[];
+                const subIds = subItems.map(s => s.id);
+
+                if (isSelected) {
+                    // Deselect parent: Remove parent ID and ALL subIds
+                    newSelected = newSelected.filter(tid => tid !== id && !subIds.includes(tid));
+                } else {
+                    // Select parent: Add parent ID and ALL subIds
+                    // Filter out existing to avoid duplicates, then add
+                    newSelected = newSelected.filter(tid => !subIds.includes(tid));
+                    newSelected.push(id, ...subIds);
+                }
+            } else {
+                // 2. Check if it's a child
+                // We need to find the parent of this child
+                let foundParent: T | undefined;
+                if (subDataKey) {
+                    foundParent = data.find(p => {
+                        const subItems = p[subDataKey];
+                        return Array.isArray(subItems) && (subItems as any[]).some(s => s.id === id);
+                    });
+                }
+
+                if (foundParent && subDataKey) {
+                    // It is a child
+                    if (isSelected) { // Was selected, now deselecting
+                        // Deselect child
+                        newSelected = newSelected.filter(tid => tid !== id);
+                        // If parent was selected, it must now be deselected because not all children are selected
+                        newSelected = newSelected.filter(tid => tid !== foundParent!.id);
+                    } else { // Was not selected, now selecting
+                        // Select child
+                        newSelected.push(id);
+                        // Check if ALL siblings are now selected
+                        const subItems = (foundParent[subDataKey] as any[]);
+                        const allSubIds = subItems.map(s => s.id);
+                        // Temporarily add current ID for check (it's already pushed)
+                        const allSiblingsSelected = allSubIds.every(sid => newSelected.includes(sid));
+
+                        if (allSiblingsSelected) {
+                            newSelected.push(foundParent.id);
+                        }
+                    }
+                } else {
+                    // Normal item (no parent found or logic not applicable)
+                    if (isSelected) {
+                        newSelected = newSelected.filter(tid => tid !== id);
+                    } else {
+                        newSelected.push(id);
+                    }
+                }
+            }
+
+            // Deduplicate just in case
+            return Array.from(new Set(newSelected));
+        });
     };
 
     const toggleSelectAll = () => {
         if (areAllSelected) {
-            // Deselect all filtered items
+            // Deselect all filtered items AND their children
             const filteredIds = filteredData.map(item => item.id);
-            setTempSelectedIds(prev => prev.filter(id => !filteredIds.includes(id)));
+            const filteredSubIds = subDataKey
+                ? filteredData.flatMap(item => Array.isArray(item[subDataKey]) ? (item[subDataKey] as any[]).map(s => s.id) : [])
+                : [];
+            setTempSelectedIds(prev => prev.filter(id => !filteredIds.includes(id) && !filteredSubIds.includes(id)));
         } else {
-            // Select all filtered items
-            const filteredIds = filteredData.map(item => item.id);
+            // Select all filtered items AND their children
             setTempSelectedIds(prev => {
-                const uniqueIds = new Set([...prev, ...filteredIds]);
+                const filteredIds = filteredData.map(item => item.id);
+                const filteredSubIds = subDataKey
+                    ? filteredData.flatMap(item => Array.isArray(item[subDataKey]) ? (item[subDataKey] as any[]).map(s => s.id) : [])
+                    : [];
+                const uniqueIds = new Set([...prev, ...filteredIds, ...filteredSubIds]);
                 return Array.from(uniqueIds);
             });
         }
     };
+
+    // Calculate count excluding parents that have sub-items
+    const selectedDisplayCount = tempSelectedIds.filter(id => {
+        if (!subDataKey) return true;
+        const parent = data.find(p => p.id === id);
+        // Exclude if it's a parent WITH sub-items
+        if (parent && Array.isArray(parent[subDataKey]) && (parent[subDataKey] as any[]).length > 0) {
+            return false;
+        }
+        return true;
+    }).length;
 
     if (!isOpen) return null;
 
@@ -130,7 +224,7 @@ export const MultiSelectModal = <T extends { id: number | string }>({
                         />
                     </div>
                     <div className="flex items-center px-3 bg-blue-50 text-[#1890ff] rounded-md text-xs font-medium border border-blue-100 whitespace-nowrap">
-                        Đã chọn: {tempSelectedIds.length}
+                        Đã chọn: {selectedDisplayCount}
                     </div>
                 </div>
 
@@ -161,23 +255,67 @@ export const MultiSelectModal = <T extends { id: number | string }>({
                             ) : (
                                 filteredData.map(item => {
                                     const isSelected = tempSelectedIds.includes(item.id);
+                                    const hasSubItems = subDataKey && Array.isArray(item[subDataKey]) && (item[subDataKey] as any).length > 0;
+                                    const isExpanded = expandedIds.has(item.id);
+                                    const subItems = hasSubItems ? (item[subDataKey] as unknown as S[]) : [];
+
                                     return (
-                                        <tr
-                                            key={item.id}
-                                            onClick={() => toggleSelect(item.id)}
-                                            className={`cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
-                                        >
-                                            <td className="px-6 py-4 text-center">
-                                                <div className={`w-5 h-5 rounded border mx-auto flex items-center justify-center transition-colors ${isSelected ? 'bg-[#1890ff] border-[#1890ff]' : 'border-gray-300 bg-white'}`}>
-                                                    {isSelected && <Check size={12} className="text-white" />}
-                                                </div>
-                                            </td>
-                                            {columns.map((col, idx) => (
-                                                <td key={idx} className={`px-6 py-4 ${col.className || ''}`}>
-                                                    {col.accessor(item)}
+                                        <React.Fragment key={item.id}>
+                                            <tr
+                                                className={`transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
+                                            >
+                                                <td className="px-6 py-4 text-center relative">
+                                                    {hasSubItems && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toggleExpand(item.id);
+                                                            }}
+                                                            className="absolute left-1 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-[#1890ff]"
+                                                        >
+                                                            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                                        </button>
+                                                    )}
+                                                    <div
+                                                        onClick={() => toggleSelect(item.id)}
+                                                        className={`w-5 h-5 rounded border mx-auto flex items-center justify-center transition-colors cursor-pointer ${isSelected ? 'bg-[#1890ff] border-[#1890ff]' : 'border-gray-300 bg-white'}`}
+                                                    >
+                                                        {isSelected && <Check size={12} className="text-white" />}
+                                                    </div>
                                                 </td>
-                                            ))}
-                                        </tr>
+                                                {columns.map((col, idx) => (
+                                                    <td key={idx} className={`px-6 py-4 ${col.className || ''}`} onClick={() => toggleSelect(item.id)}>
+                                                        {col.accessor(item)}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                            {/* Render Sub Items */}
+                                            {isExpanded && hasSubItems && subItems.map((subItem) => {
+                                                const isSubSelected = tempSelectedIds.includes(subItem.id);
+                                                return (
+                                                    <tr key={subItem.id} className={`bg-gray-50/50 ${isSubSelected ? 'bg-blue-50/30' : ''}`}>
+                                                        <td className="px-6 py-3 text-center pl-12">
+                                                            <div
+                                                                onClick={() => toggleSelect(subItem.id)}
+                                                                className={`w-4 h-4 rounded border mx-auto flex items-center justify-center transition-colors cursor-pointer ${isSubSelected ? 'bg-[#1890ff] border-[#1890ff]' : 'border-gray-300 bg-white'}`}
+                                                            >
+                                                                {isSubSelected && <Check size={10} className="text-white" />}
+                                                            </div>
+                                                        </td>
+                                                        {subColumns ? subColumns.map((col, idx) => (
+                                                            <td key={idx} className={`px-6 py-3 ${col.className || ''}`} onClick={() => toggleSelect(subItem.id)}>
+                                                                {col.accessor(subItem)}
+                                                            </td>
+                                                        )) : (
+                                                            // Fallback if no subColumns provided, merge cells
+                                                            <td colSpan={columns.length} className="px-6 py-3 text-sm text-gray-500">
+                                                                {JSON.stringify(subItem)}
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                );
+                                            })}
+                                        </React.Fragment>
                                     )
                                 })
                             )}
@@ -229,7 +367,7 @@ export const MultiSelectModal = <T extends { id: number | string }>({
                                     : 'bg-[#1462B0] text-white hover:bg-[#104e8b]'}
                             `}
                         >
-                            Xác nhận thêm ({tempSelectedIds.length})
+                            Xác nhận thêm ({selectedDisplayCount})
                         </button>
                     </div>
                 </div>
