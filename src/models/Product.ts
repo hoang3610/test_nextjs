@@ -2,11 +2,32 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
-// Sub-schema cho biến thể (SKU) - Giữ nguyên
+// -----------------------------------------------------------
+// 1. SUB-SCHEMA CHO BIẾN THỂ (SKU) - [ĐÃ UPDATE]
+// -----------------------------------------------------------
 const ProductSkuSchema = new Schema({
     sku: { type: String, required: true },
-    price: { type: Number, required: true },         // Giá bán thực tế
-    original_price: { type: Number },                // Giá gốc (để gạch ngang)
+
+    // --- CỤM GIÁ (PRICING STRATEGY) ---
+
+    // 1. Giá bán hiện tại (Dynamic): Giá khách phải trả tiền ngay lúc này. 
+    // Hệ thống sort/filter theo field này. Khi Sale thì giá này giảm, hết Sale thì giá này tăng lại.
+    price: { type: Number, required: true },
+
+    // 2. Giá niêm yết / Giá thị trường (Static): Dùng để gạch ngang cho oai (VD: Hãng bán 1tr, mình bán 800k).
+    // Field này ít khi thay đổi.
+    original_price: { type: Number, default: 0 },
+
+    // 3. [MỚI] Giá bán thường (Backup): Giá bán lẻ của shop bạn khi KHÔNG có Sale. 
+    // Dùng để khôi phục lại `price` khi hết chương trình khuyến mãi.
+    regular_price: { type: Number, default: 0 },
+
+    // 4. [MỚI] Giá Sale (Info): Lưu giá trị khuyến mãi để hiển thị label (VD: "Flash Sale 99k").
+    // Nếu = 0 tức là không sale.
+    sale_price: { type: Number, default: 0 },
+
+    // -----------------------------------
+
     stock: { type: Number, default: 0, min: 0 },
     image_url: String,
     weight: { type: Number, default: 0 },
@@ -18,6 +39,9 @@ const ProductSkuSchema = new Schema({
     }]
 });
 
+// -----------------------------------------------------------
+// 2. PRODUCT SCHEMA (CHA)
+// -----------------------------------------------------------
 const ProductSchema = new Schema({
     name: { type: String, required: true, index: true },
     slug: { type: String, required: true, unique: true },
@@ -30,54 +54,57 @@ const ProductSchema = new Schema({
 
     is_active: { type: Boolean, default: true },
     has_variants: { type: Boolean, default: false },
+
+    // Hình ảnh
     image_urls: [String],
     image_mobile_urls: [String],
 
+    // Cache thuộc tính để filter nhanh (Màu, Size...)
     attributes_summary: [{
         code: String, name: String, values: [String]
     }],
 
+    // Danh sách biến thể
     skus: [ProductSkuSchema],
 
     // -----------------------------------------------------------
-    // [NEW] CÁC TRƯỜNG CẦN THÊM ĐỂ LÀM TÍNH NĂNG TRENDING & SALE
+    // [NEW] CÁC TRƯỜNG TÍNH NĂNG TRENDING & SALE
     // -----------------------------------------------------------
 
-    // 1. Cho mục "Sản phẩm Thịnh Hành" (Trending)
-    sold_count: { type: Number, default: 0, index: true }, // Tổng số lượng đã bán của TẤT CẢ SKUs cộng lại
-    view_count: { type: Number, default: 0 },              // Lượt xem sản phẩm
-    is_featured: { type: Boolean, default: false, index: true }, // Admin ghim thủ công lên top
+    // 1. Metrics & SEO
+    sold_count: { type: Number, default: 0, index: true },
+    view_count: { type: Number, default: 0 },
+    is_featured: { type: Boolean, default: false, index: true },
+    is_new_arrival: { type: Boolean, default: false },
 
-    // 2. Cho mục "Sản phẩm Sale" & Hiển thị giá range ngoài list
-    // Lý do: Để sort giá hoặc lọc giá mà không cần chui vào mảng skus
-    min_price: { type: Number, index: true }, // Giá thấp nhất trong các SKU
-    max_price: { type: Number },              // Giá cao nhất trong các SKU
+    // 2. Price Range (Cho bộ lọc & Sort bên ngoài)
+    min_price: { type: Number, index: true },
+    max_price: { type: Number },
 
-    // Thời gian Sale (Áp dụng cho toàn bộ sản phẩm)
-    // Nếu logic sale từng SKU quá phức tạp, hãy quản lý Sale Time ở cấp Product
+    // 3. Thời gian Sale (Countdown)
     sale_start_at: { type: Date, default: null, index: true },
     sale_end_at: { type: Date, default: null, index: true },
 
-    // 3. Cho mục "Sản phẩm Mới" (Ngoài created_at có sẵn)
-    is_new_arrival: { type: Boolean, default: false } // Cờ thủ công nếu muốn ghim sản phẩm cũ thành mới
+    // 4. [MỚI & QUAN TRỌNG] SKU Đại diện hiển thị
+    // Giúp Frontend hiển thị đúng Ảnh + Giá của biến thể rẻ nhất/bán chạy nhất 
+    // mà không cần chui vào mảng `skus` để tìm.
+    variant_display: {
+        sku: String,       // VD: "sku-do-s"
+        price: Number,     // VD: 99.000
+        image: String,     // VD: "anh-ao-do.jpg"
+        label: String      // VD: "Màu Đỏ / S"
+    }
 
-}, { timestamps: true }); // Tự động có createdAt, updatedAt
+}, { timestamps: true });
 
 // -----------------------------------------------------------
-// INDEXING (Cập nhật lại)
+// INDEXING
 // -----------------------------------------------------------
-
-// 1. Lọc danh mục cơ bản
 ProductSchema.index({ category_id: 1, is_active: 1 });
-
-// 2. Lọc sản phẩm Sale (Còn hạn và đang active)
 ProductSchema.index({ sale_end_at: 1, is_active: 1 });
-
-// 3. Sort sản phẩm Thịnh hành (Ưu tiên Featured trước, rồi đến Sold Count)
 ProductSchema.index({ is_featured: -1, sold_count: -1 });
-
-// 4. Sort theo Giá (Dùng min_price thay vì skus.price sẽ nhanh hơn)
 ProductSchema.index({ min_price: 1 });
+ProductSchema.index({ name: 'text', description: 'text' }); // Thêm text search nếu cần
 
 const Product = mongoose.models.Product || mongoose.model('Product', ProductSchema);
 

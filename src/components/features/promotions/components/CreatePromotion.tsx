@@ -32,7 +32,7 @@ interface ProductSku {
 }
 
 interface Product {
-    id: number;
+    id: string | number;
     name: string;
     sku: string;
     price: number;
@@ -54,46 +54,8 @@ interface Product {
     skus: ProductSku[];
 }
 
-const MOCK_PRODUCTS: Product[] = Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
-    name: `Sản phẩm mẫu ${i + 1}`,
-    sku: `SKU_${String(i + 1).padStart(3, '0')}`,
-    price: 100000 + (i * 10000),
-    stock: Math.floor(Math.random() * 100),
-    image: `https://picsum.photos/seed/${i + 1}/100`,
-    sold_count: Math.floor(Math.random() * 1000),
-    view_count: Math.floor(Math.random() * 5000),
-    is_featured: Math.random() > 0.8,
-    min_price: 100000 + (i * 10000),
-    max_price: 100000 + (i * 10000) + 50000,
-    sale_start_at: null,
-    sale_end_at: null,
-    is_new_arrival: Math.random() > 0.9,
-    image_urls: [`https://picsum.photos/seed/${i + 1}/500`, `https://picsum.photos/seed/${i + 100}/500`],
-    image_mobile_urls: [`https://picsum.photos/seed/${i + 1}/300`],
-    attributes_summary: [
-        { code: 'color', name: 'Màu sắc', values: ['Đỏ', 'Xanh'] },
-        { code: 'size', name: 'Kích thước', values: ['S', 'M', 'L'] }
-    ],
-    skus: [
-        {
-            id: `SKU_${String(i + 1).padStart(3, '0')}_1`,
-            sku: `SKU_${String(i + 1).padStart(3, '0')}_1`,
-            price: 100000 + (i * 10000),
-            stock: 50,
-            image_url: `https://picsum.photos/seed/${i + 1}/100`,
-            attributes: [{ code: 'color', name: 'Màu sắc', value: 'Đỏ' }]
-        },
-        {
-            id: `SKU_${String(i + 1).padStart(3, '0')}_2`,
-            sku: `SKU_${String(i + 1).padStart(3, '0')}_2`,
-            price: 100000 + (i * 10000),
-            stock: 50,
-            image_url: `https://picsum.photos/seed/${i + 1}/100`,
-            attributes: [{ code: 'color', name: 'Màu sắc', value: 'Xanh' }]
-        }
-    ]
-}));
+// MOCK REMOVED
+
 
 interface PromotionItemConfig {
     discountPercent: number;
@@ -130,11 +92,65 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
 
     // --- Product Selection State ---
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [productList, setProductList] = useState<Product[]>([]);
     const [selectedProductIds, setSelectedProductIds] = useState<(number | string)[]>([]);
-    const [promotionItems, setPromotionItems] = useState<Record<number, PromotionItemConfig>>({});
+    const [promotionItems, setPromotionItems] = useState<Record<string | number, PromotionItemConfig>>({});
+
+    // Fetch Products
+    useEffect(() => {
+        if (isOpen) {
+            const fetchProducts = async () => {
+                try {
+                    console.log("CreatePromotion: Fetching products...");
+                    // Fetch limit 1000 to get all products for modal selection
+                    const res = await fetch('/api/products?limit=1000');
+                    const data = await res.json();
+                    console.log("CreatePromotion: Fetch result:", data);
+
+                    if (data.data) {
+                        // Map API response to Product interface
+                        const mappedProducts: Product[] = data.data.map((p: any) => ({
+                            id: p._id,
+                            name: p.name,
+                            sku: p.skus && p.skus.length > 0 ? p.skus[0].sku : (p.slug || ''),
+                            price: p.min_price || (p.skus && p.skus.length > 0 ? p.skus[0].price : 0),
+                            stock: p.skus ? p.skus.reduce((acc: number, sku: any) => acc + (sku.stock || 0), 0) : 0,
+                            image: p.thumbnail_url || (p.image_urls && p.image_urls.length > 0 ? p.image_urls[0] : ''),
+                            sold_count: p.sold_count || 0,
+                            view_count: p.view_count || 0,
+                            is_featured: p.is_featured || false,
+                            min_price: p.min_price || 0,
+                            max_price: p.max_price || 0,
+                            sale_start_at: p.sale_start_at,
+                            sale_end_at: p.sale_end_at,
+                            is_new_arrival: p.is_new_arrival || false,
+                            image_urls: p.image_urls || [],
+                            image_mobile_urls: p.image_mobile_urls || [],
+                            attributes_summary: p.attributes_summary || [],
+                            skus: p.skus ? p.skus.map((s: any) => ({
+                                id: s.id || s._id || s.sku, // Ensure ID for SKU
+                                sku: s.sku,
+                                price: s.price,
+                                original_price: s.original_price,
+                                stock: s.stock,
+                                image_url: s.image_url,
+                                attributes: s.attributes
+                            })) : []
+                        }));
+                        console.log("CreatePromotion: Mapped products:", mappedProducts);
+                        setProductList(mappedProducts);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch products for promotion", error);
+                    showToast({ message: "Lỗi tải danh sách sản phẩm", type: "error" });
+                }
+            };
+            fetchProducts();
+        }
+    }, [isOpen]);
 
     // Update promotionItems when inputs change
-    const handlePromotionItemChange = (productId: number, field: keyof PromotionItemConfig, value: number) => {
+    const handlePromotionItemChange = (productId: number | string, field: keyof PromotionItemConfig, value: number) => {
         setPromotionItems(prev => ({
             ...prev,
             [productId]: {
@@ -147,7 +163,7 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
     // Derived Lists
     const selectedProducts = useMemo(() => {
         const result: any[] = [];
-        MOCK_PRODUCTS.forEach(p => {
+        productList.forEach(p => {
             // 1. Check if the product itself is selected (for simple products or full selection)
             if (selectedProductIds.includes(p.id)) {
                 if (p.skus && p.skus.length > 0) {
@@ -162,12 +178,16 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
                             ...s,
                             name: `${p.name} - ${s.attributes?.map(a => a.value).join(' - ')}`,
                             image: s.image_url || p.image,
+                            product_id: p.id, // Add product_id for backend
                             // Ensure price/stock are top level for table
                         });
                     });
                 } else {
                     // Simple product
-                    result.push(p);
+                    result.push({
+                        ...p,
+                        product_id: p.id // Add product_id for backend
+                    });
                 }
             } else {
                 // 2. Check for individual SKUs if parent is not explicitly selected
@@ -179,6 +199,7 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
                             ...s,
                             name: `${p.name} - ${s.attributes?.map(a => a.value).join(' - ')}`,
                             image: s.image_url || p.image,
+                            product_id: p.id // Add product_id for backend
                         });
                     });
                 }
@@ -193,10 +214,10 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
             unique.set(item.id, item);
         });
         return Array.from(unique.values());
-    }, [selectedProductIds]);
+    }, [selectedProductIds, productList]);
 
     const availableProducts = useMemo(() => {
-        return MOCK_PRODUCTS.map(p => {
+        return productList.map(p => {
             // Clone to avoid mutation
             const product = { ...p };
 
@@ -220,8 +241,9 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
             }
 
             return product;
+            return product;
         }).filter(Boolean) as Product[];
-    }, [selectedProductIds]);
+    }, [selectedProductIds, productList]);
 
     // --- Columns Configuration ---
     const productModalColumns: ModalColumn<Product>[] = [
@@ -229,7 +251,11 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
             header: 'Sản phẩm',
             accessor: (item) => (
                 <div className="flex items-center gap-3">
-                    <img src={item.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={item.name} />
+                    {item.image ? (
+                        <img src={item.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={item.name} />
+                    ) : (
+                        <div className="w-10 h-10 rounded border bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                    )}
                     <div>
                         <div className="font-medium text-gray-900 line-clamp-1">{item.name}</div>
                         <div className="text-xs text-gray-500">{item.sku}</div>
@@ -279,7 +305,11 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
             header: 'Thông tin sản phẩm',
             render: (p) => (
                 <div className="flex items-center gap-3">
-                    <img src={p.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={p.name} />
+                    {p.image ? (
+                        <img src={p.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={p.name} />
+                    ) : (
+                        <div className="w-10 h-10 rounded border bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No img</div>
+                    )}
                     <div>
                         <div className="font-medium text-gray-900 line-clamp-1">{p.name}</div>
                         <div className="text-xs text-gray-500">{p.sku}</div>
@@ -301,7 +331,11 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
 
     const renderProductMobile = (p: Product, onRemove: (item: Product) => void) => (
         <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-start gap-3 relative">
-            <img src={p.image} className="w-16 h-16 rounded border object-cover bg-gray-50" alt="" />
+            {p.image ? (
+                <img src={p.image} className="w-16 h-16 rounded border object-cover bg-gray-50" alt="" />
+            ) : (
+                <div className="w-16 h-16 rounded border bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Img</div>
+            )}
             <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight mb-1">{p.name}</div>
                 <div className="text-xs text-gray-500 mb-2">{p.sku}</div>
@@ -341,7 +375,7 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
     }, [isOpen, resetForm]);
 
     // --- Handlers ---
-    const handleSaveClick = () => {
+    const handleSaveClick = async () => {
         // Basic validation
         if (!formData.name) {
             showToast({ message: "Tên chiến dịch là bắt buộc", type: "error" });
@@ -363,12 +397,27 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
             status: formData.status as any || 'DRAFT',
             is_auto_active: formData.is_auto_active,
             start_at: formData.start_at,
-            end_at: formData.end_at
+            end_at: formData.end_at,
+            items: selectedProducts.map(product => {
+                const config = promotionItems[product.id] || { discountPercent: 0, discountQuantity: product.stock };
+                const discountValue = config.discountPercent || 0;
+                const salePrice = product.price * (1 - discountValue / 100);
+
+                return {
+                    product_id: (product as any).product_id, // We added this in selectedProducts
+                    sku: product.sku,
+                    product_name: product.name,
+                    sku_name: product.name, // Can be refined if specific sku name needed separately
+                    original_price: product.price,
+                    sale_price: salePrice,
+                    discount_type: 'PERCENTAGE',
+                    discount_value: discountValue,
+                    stock_sale: config.discountQuantity || product.stock,
+                    // Additional fields as needed by backend
+                };
+            })
         };
-        onSave(payload);
-        onClose();
-        // Reset form
-        resetForm();
+        await onSave(payload);
     };
 
     // --- Render Helpers ---
@@ -613,7 +662,7 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
                                 // 2. If we are removing an SKU but its parent is selected (e.g. parent ID in list)
                                 // We need to find the parent
                                 // SKU IDs are always strings. If item.id is a number (Product ID), this loop won't match anyway.
-                                const parent = MOCK_PRODUCTS.find(p => p.skus && p.skus.some(s => s.id === String(item.id)));
+                                const parent = productList.find(p => p.skus && p.skus.some(s => s.id === String(item.id)));
                                 if (parent && prev.includes(parent.id)) {
                                     // Remove parent ID
                                     let newIds = prev.filter(id => id !== parent.id);
@@ -641,7 +690,11 @@ const CreatePromotion: React.FC<CreatePromotionProps> = ({ isOpen, onClose, onSa
                                     header: 'Sản phẩm',
                                     render: (p: Product) => (
                                         <div className="flex items-center gap-3">
-                                            <img src={p.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={p.name} />
+                                            {p.image ? (
+                                                <img src={p.image} className="w-10 h-10 rounded border object-cover bg-gray-100" alt={p.name} />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded border bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                                            )}
                                             <div>
                                                 <div className="font-medium text-gray-900 line-clamp-1">{p.name}</div>
                                                 <div className="text-xs text-gray-500">{p.sku}</div>

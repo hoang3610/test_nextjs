@@ -72,7 +72,18 @@ export async function POST(
         // If not, we might need to fetch existing SKUs?
         // Usually frontend sends the full object. Assuming body contains skus if they are being updated.
         if (body.skus && Array.isArray(body.skus) && body.skus.length > 0) {
-            const prices = body.skus.map((sku: any) => sku.price).filter((p: any) => typeof p === 'number');
+            const prices: number[] = [];
+
+            body.skus = body.skus.map((sku: any) => {
+                if (typeof sku.price === 'number') {
+                    prices.push(sku.price);
+                    // User Request: Assign regular_price = price and sale_price = 0
+                    sku.regular_price = sku.price;
+                    sku.sale_price = 0;
+                }
+                return sku;
+            });
+
             if (prices.length > 0) {
                 body.min_price = Math.min(...prices);
                 body.max_price = Math.max(...prices);

@@ -6,6 +6,7 @@ export interface CreatePromotionRequest {
     end_at: string | Date;
     status?: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'FINISHED';
     is_auto_active?: boolean;
+    items?: any[];
 }
 
 export interface UpdatePromotionRequest extends Partial<CreatePromotionRequest> {

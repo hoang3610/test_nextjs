@@ -102,8 +102,7 @@ const TablePromotion: React.FC<TablePromotionProps> = ({
                 onView={onView ? () => onView(item) : undefined}
                 onEdit={onEdit ? () => onEdit(item) : undefined}
                 onDelete={onDelete ? () => onDelete(item) : undefined}
-            // onChangeStatus not directly supported by action button or needs modification? 
-            // ActionButtons usually supports basic crud. keeping generic for now.
+                onChangeStatus={onChangeStatus ? () => onChangeStatus(item) : undefined}
             />,
         },
     ];

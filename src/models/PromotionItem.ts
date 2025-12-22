@@ -38,7 +38,10 @@ const PromotionItemSchema = new Schema({
     // 5. Giới hạn mua (Optional)
     max_quantity_per_user: { type: Number, default: 0 } // 0 = Không giới hạn. >0 = Mỗi người chỉ được mua X cái.
 
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    collection: 'promotion_items' // Tên bảng (collection) cụ thể trong MongoDB
+});
 
 // Index kép quan trọng:
 // 1. Để lấy list sản phẩm của 1 chiến dịch
