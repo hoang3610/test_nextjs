@@ -1,65 +1,71 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TabsCustom, TabCustom, TabPanelCustom } from '@/components/custom/tab-custom';
-import { User, Settings, Shield } from 'lucide-react';
+import { TableWithFilters } from '@/components/custom/table-with-filters';
+import { Column } from '@/components/custom/table';
 
 const TestPage = () => {
-    const [currentTab, setCurrentTab] = useState(0);
+    const [activeTab, setActiveTab] = useState('all');
+    const [currentSearch, setCurrentSearch] = useState('');
 
-    const handleChangeTab = (newValue: number) => {
-        setCurrentTab(newValue);
-    };
+    const tabs = [
+        { value: 'all', label: 'Tất cả' },
+        { value: 'warning', label: 'Sắp hết', count: 3 },
+        { value: 'out_of_stock', label: 'Hết hàng', count: 1 }
+    ];
+
+    const mockData = [
+        { id: 1, name: 'Sản phẩm A', stock: 100, status: 'AVAILABLE' },
+        { id: 2, name: 'Sản phẩm B', stock: 5, status: 'WARNING' },
+        { id: 3, name: 'Sản phẩm C', stock: 0, status: 'OUT_OF_STOCK' },
+        { id: 4, name: 'Sản phẩm D', stock: 50, status: 'AVAILABLE' }
+    ];
+
+    const filteredData = mockData.filter(item => {
+        if (activeTab === 'warning' && item.status !== 'WARNING') return false;
+        if (activeTab === 'out_of_stock' && item.status !== 'OUT_OF_STOCK') return false;
+        if (currentSearch && !item.name.toLowerCase().includes(currentSearch.toLowerCase())) return false;
+        return true;
+    });
+
+    const columns: Column<typeof mockData[0]>[] = [
+        { header: 'ID', accessor: 'id' as const },
+        { header: 'Tên sản phẩm', accessor: 'name' as const },
+        {
+            header: 'Tồn kho',
+            accessor: 'stock' as const,
+            render: (item: any) => (
+                <span className={item.stock < 10 ? 'text-red-500 font-bold' : ''}>{item.stock}</span>
+            )
+        },
+        { header: 'Trạng thái', accessor: 'status' as const }
+    ];
 
     return (
         <div className="w-full p-8 bg-gray-50 min-h-screen">
-            <div className="max-w-5xl mx-auto">
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-gray-800 mb-2">TabCustom Demo</h1>
-                    <p className="text-gray-600">Ví dụ về cách sử dụng component TabsCustom.</p>
-                </div>
-
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <TabsCustom
-                        value={currentTab}
-                        onChange={handleChangeTab}
-                        className="border-b border-gray-200 mb-4"
-                    >
-                        <TabCustom
-                            label="Thông tin chung"
-                            icon={<User size={18} />}
-                            iconPosition="start"
-                        />
-                        <TabCustom
-                            label="Cấu hình"
-                            icon={<Settings size={18} />}
-                            iconPosition="start"
-                        />
-                        <TabCustom
-                            label="Bảo mật"
-                            icon={<Shield size={18} />}
-                            iconPosition="start"
-                        />
-                    </TabsCustom>
-
-                    <TabPanelCustom value={currentTab} index={0}>
-                        <div className="p-4 bg-gray-50 rounded border border-gray-100 min-h-[200px]">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Tab 1: Thông tin chung</h3>
-                            <p className="text-gray-600">Nội dung của tab thông tin chung...</p>
-                        </div>
-                    </TabPanelCustom>
-                    <TabPanelCustom value={currentTab} index={1}>
-                        <div className="p-4 bg-gray-50 rounded border border-gray-100 min-h-[200px]">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Tab 2: Cấu hình</h3>
-                            <p className="text-gray-600">Nội dung của tab cấu hình hệ thống...</p>
-                        </div>
-                    </TabPanelCustom>
-                    <TabPanelCustom value={currentTab} index={2}>
-                        <div className="p-4 bg-gray-50 rounded border border-gray-100 min-h-[200px]">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Tab 3: Bảo mật</h3>
-                            <p className="text-gray-600">Nội dung của tab bảo mật và quyền hạn...</p>
-                        </div>
-                    </TabPanelCustom>
+            <div className="max-w-5xl mx-auto space-y-8">
+                <div>
+                    <h1 className="text-2xl font-bold mb-4">TableWithFilters Demo</h1>
+                    <TableWithFilters
+                        title="Hiệu quả sản phẩm"
+                        description="Danh sách sản phẩm tham gia và tiến độ bán."
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        onSearch={setCurrentSearch}
+                        searchPlaceholder="Tìm kiếm sản phẩm..."
+                        onFilterClick={() => alert('Filter Clicked')}
+                        onAdd={() => alert('Add Clicked')}
+                        data={filteredData}
+                        columns={columns}
+                        pagination={{
+                            currentPage: 1,
+                            totalPages: 1,
+                            totalItems: filteredData.length,
+                            itemsPerPage: 10,
+                            onPageChange: () => { }
+                        }}
+                    />
                 </div>
             </div>
         </div>

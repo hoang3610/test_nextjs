@@ -6,6 +6,10 @@
   :root {
     /* 📏 Radius: Chỉ số */
     --radius: 0.5rem;
+    --radius-xs: 0.25rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --radius-3xl: 1.5rem;
 
     /* ☀️ Light Mode */
     --background: 0 0% 100%;

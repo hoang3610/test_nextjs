@@ -7,6 +7,7 @@ import { CreatePromotionRequest } from '../models/request/promotion';
 import TablePromotion from '../components/TablePromotion';
 import CreatePromotion from '../components/CreatePromotion';
 import EditPromotion from '../components/EditPromotion';
+import ViewPromotion from '../components/ViewPromotion';
 
 import ModalConfirmCustom from '@/components/custom/modal-confirm-custom';
 import { showToast } from '@/components/custom/custom-toast';
@@ -22,6 +23,7 @@ const PromotionIndexPage = () => {
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
     const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null);
 
@@ -114,7 +116,10 @@ const PromotionIndexPage = () => {
                 onPageChange={setCurrentPage}
                 onCreate={handleCreate}
                 // Actions (Temporarily disabled/placeholder as requested)
-                onView={(item) => console.log('View', item)}
+                onView={(item) => {
+                    setSelectedPromotionId(item._id);
+                    setIsViewModalOpen(true);
+                }}
                 onEdit={(item) => {
                     setSelectedPromotionId(item._id);
                     setIsEditModalOpen(true);
@@ -139,6 +144,13 @@ const PromotionIndexPage = () => {
                 isOpen={isCreateModalOpen}
                 onClose={() => setCreateModalOpen(false)}
                 onSave={handleSaveNewPromotion}
+            />
+
+            <ViewPromotion
+                isOpen={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
+                promotionId={selectedPromotionId}
+                onUpdate={fetchPromotions}
             />
 
             <EditPromotion

@@ -129,12 +129,12 @@ export const SelectedItemsTable = <T extends Record<string, any>>({
                                         <span className="text-sm font-medium text-gray-700 truncate pr-8">
                                             Item #{String(item[keyField])}
                                         </span>
-                                        <button
+                                        <Button
                                             onClick={() => onRemove(item)}
                                             className="p-1.5 text-gray-300 hover:text-red-500"
                                         >
                                             <X size={16} />
-                                        </button>
+                                        </Button>
                                     </div>
                                 )}
                             </React.Fragment>
