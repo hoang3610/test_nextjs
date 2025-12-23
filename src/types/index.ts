@@ -7,6 +7,8 @@ export interface Product {
   isNew?: boolean;
   isFeatured?: boolean;
   isFlashSale?: boolean;
+  originalPrice?: number;
+  regularPrice?: number;
 }
 
 export interface CartItem extends Product {

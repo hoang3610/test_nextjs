@@ -71,6 +71,7 @@ async function getNewProducts(days: number = 7, limit: number = 4) {
       isNew: true,
       isFeatured: false,
       isFlashSale: false,
+      regularPrice: item.skus?.[0]?.regular_price || 0,
     }));
   } catch (error) {
     console.error('Error fetching new products:', error);
@@ -103,9 +104,54 @@ async function getFeaturedProducts(limit: number = 4) {
       isNew: false,
       isFeatured: true,
       isFlashSale: false,
+      regularPrice: item.skus?.[0]?.regular_price || 0,
     }));
   } catch (error) {
     console.error('Error fetching featured products:', error);
+    return [];
+  }
+}
+
+// 2d. Fetch Flash Sale Products (Server Logic - replicating API /api/products/flash-sale)
+async function getFlashSaleProducts(limit: number = 4) {
+  try {
+    noStore();
+    await dbConnect();
+
+    // 1. Calculate Date Range (Current Month) - UTC Forced
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth(); // 0-based
+
+    // Start of current month in UTC
+    const start = new Date(Date.UTC(year, month, 1));
+    // End of current month in UTC
+    const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+
+    const products = await Product.find({
+      is_active: true,
+      sale_start_at: { $lte: end },
+      sale_end_at: { $gte: start },
+    })
+      .sort({ sale_end_at: 1 })
+      .limit(limit)
+      .populate('category_id', 'name slug')
+      .lean();
+
+    return JSON.parse(JSON.stringify(products)).map((item: any) => ({
+      id: item._id,
+      name: item.name,
+      slug: item.slug,
+      price: item.skus?.[0]?.price || 0,
+      originalPrice: item.skus?.[0]?.original_price || undefined,
+      imageUrl: item.thumbnail_url || item.image_urls?.[0] || '',
+      isNew: false,
+      isFeatured: false,
+      isFlashSale: true,
+      regularPrice: item.skus?.[0]?.regular_price || 0,
+    }));
+  } catch (error) {
+    console.error('Error fetching flash sale products:', error);
     return [];
   }
 }
@@ -115,9 +161,7 @@ export default async function HomePage() {
   const categories = await getData();
   const newProducts = await getNewProducts(7, 4);
   const featuredProducts = await getFeaturedProducts(4);
-
-  // Mock data for other sections (for now)
-  const flashSaleProducts = mockProducts.filter(p => p.isFlashSale);
+  const flashSaleProducts = await getFlashSaleProducts(4);
 
   return (
     <div className="divide-y divide-gray-200 dark:divide-gray-700 pb-20">

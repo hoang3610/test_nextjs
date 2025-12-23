@@ -65,6 +65,7 @@ const ProductContent = () => {
             name: item.name,
             slug: item.slug,
             price: item.skus?.[0]?.price || 0, // Fallback price
+            regularPrice: item.skus?.[0]?.regular_price || 0, // Added for discount display
             imageUrl: item.thumbnail_url || 'https://placehold.co/400',
             isNew: Math.random() > 0.8, // Mock logic for UI
             isFlashSale: Math.random() > 0.9, // Mock logic for UI

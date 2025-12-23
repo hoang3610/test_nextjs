@@ -57,6 +57,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           )}
         </div>
 
+        {/* Discount Badge (Top Right) */}
+        {product.regularPrice && product.price < product.regularPrice && (
+          <div className="absolute top-0 right-0 z-10">
+            <span className="flex items-center justify-center bg-[#ffe97a] text-[#ee4d2d] text-xs font-bold px-1.5 py-0.5 rounded-bl shadow-sm">
+              -{Math.round(((product.regularPrice - product.price) / product.regularPrice) * 100)}%
+            </span>
+          </div>
+        )}
+
         {/* Add to Cart Button */}
         <div className="absolute inset-x-0 bottom-0 flex justify-center bg-black/40 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-20">
           <button
@@ -79,14 +88,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {product.name}
           </Link>
         </h3>
-        <p className="mt-1 text-lg font-bold text-blue-600 dark:text-blue-400">
-          {/* 
-            Conditionally render the price only on the client-side after mounting.
-            This prevents a hydration mismatch between the server and client,
-            as locale-specific formatting can differ between environments.
-          */}
-          {isMounted ? formatPrice(product.price) : '...'}
-        </p>
+        <div className="mt-1 flex items-center justify-center gap-2">
+          {/* Discount Logic: If regularPrice > price, show strikethrough */}
+          {isMounted && product.regularPrice && product.regularPrice > product.price ? (
+            <>
+              <span className="text-sm text-gray-400 line-through">
+                {formatPrice(product.regularPrice)}
+              </span>
+              <span className="text-lg font-bold text-[#ee4d2d]">
+                {formatPrice(product.price)}
+              </span>
+            </>
+          ) : (
+            <span className="text-lg font-bold text-[#ee4d2d]">
+              {isMounted ? formatPrice(product.price) : '...'}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

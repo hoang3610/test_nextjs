@@ -19,6 +19,7 @@ interface ProductSku {
     sku: string;
     price: number;
     original_price?: number;
+    regular_price?: number; // Added
     stock: number;
     image_url?: string;
     is_active: boolean;
@@ -250,14 +251,19 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                         </div>
                     </div>
 
-                    <div className="flex items-end gap-3">
-                        <span className="text-3xl font-bold text-blue-600">
+                    <div className="flex items-center gap-3">
+                        <span className="text-3xl font-bold text-[#ee4d2d]">
                             {isMounted && selectedSku ? formatPrice(selectedSku.price) : '...'}
                         </span>
-                        {isMounted && selectedSku?.original_price && selectedSku.original_price > selectedSku.price && (
-                            <span className="text-lg text-gray-400 line-through mb-1">
-                                {formatPrice(selectedSku.original_price)}
-                            </span>
+                        {isMounted && selectedSku?.regular_price && selectedSku.regular_price > selectedSku.price && (
+                            <>
+                                <span className="text-lg text-gray-400 line-through">
+                                    {formatPrice(selectedSku.regular_price)}
+                                </span>
+                                <span className="bg-[#ffe97a] text-[#ee4d2d] text-xs font-bold px-1.5 py-0.5 rounded shadow-sm border border-[#f5d45e]">
+                                    -{Math.round(((selectedSku.regular_price - selectedSku.price) / selectedSku.regular_price) * 100)}%
+                                </span>
+                            </>
                         )}
                     </div>
 
