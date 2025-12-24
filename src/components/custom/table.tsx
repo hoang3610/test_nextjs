@@ -6,7 +6,7 @@ export interface Column<T> {
   header: string;
   accessor?: keyof T;
   className?: string;
-  render?: (item: T) => React.ReactNode;
+  render?: (item: T, index: number) => React.ReactNode;
 }
 
 export interface PaginationProps {
@@ -98,7 +98,7 @@ export const Table = <T,>({
                       key={colIndex}
                       className={`p-4 text-sm text-gray-700 whitespace-nowrap border border-gray-200 ${col.className || ""}`}
                     >
-                      {col.render ? col.render(item) : col.accessor ? String(item[col.accessor]) : ""}
+                      {col.render ? col.render(item, rowIndex) : col.accessor ? String(item[col.accessor]) : ""}
                     </td>
                   ))}
                 </tr>
