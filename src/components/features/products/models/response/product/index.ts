@@ -8,6 +8,8 @@ export interface ProductSkuResponse {
     sku: string;
     price: number;
     original_price?: number;
+    sale_price?: number;
+    regular_price?: number;
     stock: number;
     image_url?: string;
     is_active: boolean;

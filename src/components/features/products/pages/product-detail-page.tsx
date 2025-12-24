@@ -38,6 +38,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
     const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
     const [mainImage, setMainImage] = useState<string>(product.thumbnail_url || '');
     const [quantity, setQuantity] = useState(1);
+    const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false); // New state
     const [isMounted, setIsMounted] = useState(false);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
@@ -71,6 +72,13 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
     // -- Helpers --
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    };
+
+    // Helper to simulate loading
+    const updateQuantity = (delta: number) => {
+        setQuantity(prev => Math.max(1, prev + delta));
+        setIsUpdatingQuantity(true);
+        setTimeout(() => setIsUpdatingQuantity(false), 500); // 0.5s delay
     };
 
     // Get all unique attributes for UI
@@ -317,14 +325,14 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                     <div className="flex flex-col sm:flex-row gap-4 mt-4">
                         <div className="flex items-center border border-gray-300 rounded-lg w-fit">
                             <button
-                                onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                onClick={() => updateQuantity(-1)}
                                 className="px-4 py-2 hover:bg-gray-100 text-gray-600"
                             >
                                 -
                             </button>
                             <span className="px-4 py-2 font-medium w-12 text-center">{quantity}</span>
                             <button
-                                onClick={() => setQuantity(q => q + 1)}
+                                onClick={() => updateQuantity(1)}
                                 className="px-4 py-2 hover:bg-gray-100 text-gray-600"
                             >
                                 +
@@ -334,11 +342,12 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                         <button
                             onClick={handleAddToCart}
                             disabled={
+                                isUpdatingQuantity ||
                                 (product.has_variants && !selectedSku) ||
                                 (selectedSku && selectedSku.stock <= 0) ||
                                 (!product.has_variants && product.skus?.[0]?.stock <= 0)
                             }
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 px-8 rounded-full font-bold shadow-lg transition-all ${((product.has_variants && !selectedSku) || (selectedSku && selectedSku.stock <= 0) || (!product.has_variants && product.skus?.[0]?.stock <= 0))
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 px-8 rounded-full font-bold shadow-lg transition-all ${(isUpdatingQuantity || (product.has_variants && !selectedSku) || (selectedSku && selectedSku.stock <= 0) || (!product.has_variants && product.skus?.[0]?.stock <= 0))
                                 ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none'
                                 : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-blue-500/30 active:scale-95'
                                 }`}
@@ -346,7 +355,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                             <ShoppingCart size={20} />
                             {(selectedSku && selectedSku.stock <= 0) || (!product.has_variants && product.skus?.[0]?.stock <= 0)
                                 ? "Hết hàng"
-                                : "Thêm vào giỏ"}
+                                : isUpdatingQuantity ? "Đang cập nhật..." : "Thêm vào giỏ"}
                         </button>
                     </div>
 

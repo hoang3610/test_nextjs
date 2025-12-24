@@ -194,7 +194,7 @@ export default async function HomePage() {
         )}
 
         {flashSaleProducts.length > 0 && (
-          <ProductSection title="Flash Sale" products={flashSaleProducts} />
+          <ProductSection title="Sale Giảm Giá" products={flashSaleProducts} />
         )}
       </div>
     </div>

@@ -27,6 +27,8 @@ export interface ProductVariant {
   attributes: Record<string, string>;
   original_price?: number; // Renamed from price_original
   image_url?: string;
+  sale_price?: number; // Added for persistence
+  regular_price?: number; // Added for persistence
 }
 
 // Internal state interface for the form, extending the response payload with UI specific fields
@@ -105,6 +107,8 @@ const EditProduct: React.FC<EditProductProps> = ({ isOpen, onClose, onSave, prod
             attributes: variantAttributes,
             original_price: sku.original_price || 0, // Map original_price
             image_url: sku.image_url || '',
+            sale_price: sku.sale_price,
+            regular_price: sku.regular_price,
           };
         }) || []
       };

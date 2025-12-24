@@ -79,7 +79,7 @@ export async function POST(
                     prices.push(sku.price);
                     // User Request: Assign regular_price = price and sale_price = 0
                     sku.regular_price = sku.price;
-                    sku.sale_price = 0;
+                    // sku.sale_price = 0;
                 }
                 return sku;
             });

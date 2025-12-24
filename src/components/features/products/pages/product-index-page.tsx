@@ -345,6 +345,8 @@ const ProductIndexPage = () => {
           price: v.price,
           stock: v.stock,
           original_price: v.original_price || editedData.original_price,
+          sale_price: v.sale_price ?? 0,
+          regular_price: v.regular_price ?? 0,
           image_url: v.image_url, // Map image_url to image_url field
           is_active: true,
           attributes: v.attributes ? Object.entries(v.attributes).map(([key, value]) => ({
@@ -361,6 +363,21 @@ const ProductIndexPage = () => {
           price: editedData.price || 0,
           stock: editedData.stock || 0,
           original_price: editedData.original_price || 0,
+          // For single SKU, we assume no sale price unless explicitly handled, 
+          // but we should pass it if it existed in default SKU.
+          // However, single SKU edits usually don't set sale_price in this form yet.
+          // But to be safe, if we map it, we should pass it. 
+          // For now, let's assume single SKU relies on backend/defaults if not present from form.
+          // Actually, let's map it if present in variants[0] or similar? 
+          // The form state for single SKU doesn't seem to have explicit sale_price input yet.
+          // But let's look at `editedData`.
+          // If we want to persist, we should probably grab it from `editedData.skus[0]` if possible or `editedData` if we add it there.
+          // For now, let's trust that single SKU form might not have it, so undefined is okay?
+          // WAIT: If we update single SKU, we are overwriting. If we don't send it, it resets to 0.
+          // We need `sale_price` in `ProductFormState`.
+          // Let's add it from `editedData.sale_price` (which we should have mapped or `variants[0]`).
+          sale_price: editedData.variants?.[0]?.sale_price || 0,
+          regular_price: editedData.variants?.[0]?.regular_price || editedData.price || 0,
           is_default: true,
           is_active: true,
           attributes: []
