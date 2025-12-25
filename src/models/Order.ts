@@ -34,9 +34,18 @@ const OrderSchema = new Schema({
     shipping_address: {
         full_name: { type: String, required: true },
         phone_number: { type: String, required: true },
-        city: String,
-        district: String,
-        ward: String,
+        province: {
+            code: Number,
+            name: String
+        },
+        district: {
+            code: Number,
+            name: String
+        },
+        ward: {
+            code: Number,
+            name: String
+        },
         street_address: String,
         note: String
     },

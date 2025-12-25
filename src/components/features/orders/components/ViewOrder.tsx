@@ -205,10 +205,12 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ isOpen, onClose, orderId }) => {
                         </h3>
                         <div className="space-y-1">
                             <p className="font-medium text-gray-800 text-base leading-relaxed">
-                                {order.shipping_address?.street_address ? `${order.shipping_address.street_address}, ` : ''}
-                                {order.shipping_address?.ward ? `${order.shipping_address.ward}, ` : ''}
-                                {order.shipping_address?.district ? `${order.shipping_address.district}, ` : ''}
-                                {order.shipping_address?.city}
+                                {[
+                                    order.shipping_address?.street_address,
+                                    order.shipping_address?.ward?.name,
+                                    order.shipping_address?.district?.name,
+                                    order.shipping_address?.province?.name
+                                ].filter(Boolean).join(', ')}
                             </p>
                             {order.shipping_address?.note && (
                                 <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 text-sm rounded-lg border border-yellow-100 italic">

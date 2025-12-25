@@ -9,9 +9,9 @@ export interface OrderResponse {
     shipping_address: {
         full_name: string;
         phone_number: string;
-        city?: string;
-        district?: string;
-        ward?: string;
+        province?: { code: number; name: string };
+        district?: { code: number; name: string };
+        ward?: { code: number; name: string };
         street_address?: string;
         note?: string;
     };

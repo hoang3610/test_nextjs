@@ -2,6 +2,7 @@ export interface Product {
   id: string | number;
   slug: string;
   name: string;
+  sku?: string;
   price: number;
   imageUrl: string;
   isNew?: boolean;

@@ -1,29 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Use next/navigation for app dir
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/hooks/useCart';
-import { useAuth } from '@/hooks/useAuth'; // Might need this later, currently unused for ID
 import { showToast } from '@/components/custom/custom-toast';
 
-// Placeholder ID for guest/default user since Auth doesn't provide ID yet
-// In a real app, this would come from the auth context or session
 const GUEST_USER_ID = '674488888888888888888888';
+
+interface Province { code: number; name: string; }
+interface Ward { code: number; name: string; }
 
 const CheckoutPage: React.FC = () => {
     const router = useRouter();
     const { cartItems, cartTotal, clearCart } = useCart();
-    // const { user } = useAuth(); // Future: get user ID
 
     // Form State
     const [formData, setFormData] = useState({
         full_name: '',
         phone_number: '',
-        city: '',
-        district: '',
-        ward: '',
+        province_code: '',
+        district: '', // Kept for backend compatibility but disabled in UI
+        ward_code: '',
         street_address: '',
         note: '',
         payment_method: 'COD' as 'COD' | 'BANKING'
@@ -32,16 +31,47 @@ const CheckoutPage: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
+    // Location Data State
+    const [provinces, setProvinces] = useState<Province[]>([]);
+    const [wards, setWards] = useState<Ward[]>([]);
+    const [isLoadingWards, setIsLoadingWards] = useState(false);
+
     useEffect(() => {
         setIsMounted(true);
+        // Fetch Provinces on load
+        fetch('/api/locations/provinces')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) setProvinces(data);
+            })
+            .catch(err => console.error(err));
     }, []);
 
-    // Redirect if cart is empty
     useEffect(() => {
         if (isMounted && cartItems.length === 0) {
             router.push('/cart');
         }
     }, [isMounted, cartItems, router]);
+
+    // Fetch Wards when Province changes (Skip District)
+    useEffect(() => {
+        if (formData.province_code) {
+            setIsLoadingWards(true);
+            fetch(`/api/locations/wards?province_code=${formData.province_code}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) setWards(data);
+                    setFormData(prev => ({ ...prev, ward_code: '' }));
+                })
+                .catch(err => console.error(err))
+                .finally(() => setIsLoadingWards(false));
+
+            // Optional: reset district if we were using it, but we aren't
+        } else {
+            setWards([]);
+        }
+    }, [formData.province_code]);
+
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -67,34 +97,41 @@ const CheckoutPage: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            // Prepare Payload ensuring it matches Order interface
+            // Get names from codes
+            const provinceName = provinces.find(p => p.code === Number(formData.province_code))?.name || '';
+            const wardName = wards.find(w => w.code === Number(formData.ward_code))?.name || '';
+
             const payload = {
-                user_id: GUEST_USER_ID, // TODO: Replace with real user ID
-                order_code: `ORD-${Date.now()}`, // Temporary client-side generation, backend should handle ideally or this is a fallback
+                user_id: GUEST_USER_ID,
+                order_code: `ORD-${Date.now()}`,
                 payment_method: formData.payment_method,
                 shipping_address: {
                     full_name: formData.full_name,
                     phone_number: formData.phone_number,
-                    city: formData.city,
-                    district: formData.district,
-                    ward: formData.ward,
+                    province: {
+                        code: Number(formData.province_code),
+                        name: provinceName
+                    },
+                    district: {
+                        code: 0,
+                        name: ""
+                    },
+                    ward: {
+                        code: Number(formData.ward_code),
+                        name: wardName
+                    },
                     street_address: formData.street_address,
                     note: formData.note
                 },
                 items: cartItems.map(item => ({
                     product_id: item.id,
                     quantity: item.quantity,
-                    price: item.price, // Snapshot price
-                    // We might need to ensure backend handles total calculation or we send it. 
-                    // Based on previous tasks, backend likely recalculates or validates.
+                    price: item.price,
+                    name: item.name,
+                    sku: item.sku || "SKU-UNKNOWN"
                 })),
-                // Backend model has subtotal/grand_total required? 
-                // Let's rely on backend calculation if possible, or send estimated values?
-                // Looking at Order model: subtotal_amount, grand_total are required paths.
-                // We should calculate them here to be safe or ensure backend middleware does it.
-                // Let's utilize the calculation from useCart logic.
                 subtotal_amount: cartTotal,
-                shipping_fee: 0, // Free shipping logic
+                shipping_fee: 0,
                 discount_amount: 0,
                 grand_total: cartTotal,
                 status: 'PENDING',
@@ -125,7 +162,7 @@ const CheckoutPage: React.FC = () => {
         }
     };
 
-    if (!isMounted) return null; // Hydration fix
+    if (!isMounted) return null;
 
     return (
         <div className="bg-gray-50 min-h-screen py-12">
@@ -168,39 +205,52 @@ const CheckoutPage: React.FC = () => {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     />
                                 </div>
+
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Tỉnh / Thành phố</label>
-                                    <input
-                                        type="text"
-                                        name="city"
-                                        value={formData.city}
+                                    <label className="text-sm font-medium text-gray-700">Tỉnh / Thành phố *</label>
+                                    <select
+                                        name="province_code"
+                                        value={formData.province_code}
                                         onChange={handleInputChange}
-                                        placeholder="Hà Nội"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    />
+                                        required
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                    >
+                                        <option value="">Chọn Tỉnh/Thành</option>
+                                        {provinces.map(p => (
+                                            <option key={p.code} value={p.code}>{p.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
+
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium text-gray-700">Quận / Huyện</label>
                                     <input
                                         type="text"
                                         name="district"
                                         value={formData.district}
-                                        onChange={handleInputChange}
-                                        placeholder="Cầu Giấy"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        disabled
+                                        placeholder="(Sử dụng phường xã mới nhé bạn ưiii)"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-gray-100 opacity-60 cursor-not-allowed"
                                     />
                                 </div>
+
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Phường / Xã</label>
-                                    <input
-                                        type="text"
-                                        name="ward"
-                                        value={formData.ward}
+                                    <label className="text-sm font-medium text-gray-700">Phường / Xã *</label>
+                                    <select
+                                        name="ward_code"
+                                        value={formData.ward_code}
                                         onChange={handleInputChange}
-                                        placeholder="Dịch Vọng"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    />
+                                        required
+                                        disabled={!formData.province_code || isLoadingWards}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white disabled:bg-gray-100 disabled:text-gray-400"
+                                    >
+                                        <option value="">{isLoadingWards ? 'Đang tải...' : 'Chọn Phường/Xã'}</option>
+                                        {wards.map(w => (
+                                            <option key={w.code} value={w.code}>{w.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
+
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-sm font-medium text-gray-700">Địa chỉ cụ thể *</label>
                                     <input
