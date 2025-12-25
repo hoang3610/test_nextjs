@@ -20,8 +20,8 @@ const CartPage: React.FC = () => {
         <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
           Giỏ hàng của bạn đang trống
         </h2>
-        <Link 
-          href="/products" 
+        <Link
+          href="/products"
           className="bg-blue-600 text-white px-8 py-3 rounded-full font-medium hover:bg-blue-700 transition-colors shadow-lg"
         >
           Tiếp tục mua sắm
@@ -35,17 +35,17 @@ const CartPage: React.FC = () => {
       <h1 className="text-3xl font-bold text-center mb-10 text-gray-900 dark:text-white">
         Giỏ hàng của bạn
       </h1>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Danh sách sản phẩm (Bên trái) */}
         <div className="lg:col-span-2 space-y-4">
           {cartItems.map((item) => (
             <div key={item.id} className="flex items-center bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-              
+
               {/* Hình ảnh sản phẩm */}
               <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-600 mr-6">
-                <Image 
-                  src={item.imageUrl} 
+                <Image
+                  src={item.imageUrl}
                   alt={item.name}
                   fill
                   className="object-cover"
@@ -56,10 +56,10 @@ const CartPage: React.FC = () => {
               {/* Thông tin & Giá */}
               <div className="flex-grow">
                 <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 line-clamp-2">
-                    {item.name}
+                  {item.name}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                    Đơn giá: {formatCurrency(item.price)}
+                  Đơn giá: {formatCurrency(item.price)}
                 </p>
               </div>
 
@@ -75,13 +75,13 @@ const CartPage: React.FC = () => {
                   className="w-16 text-center border rounded-md py-1 dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                   min="1"
                 />
-                
+
                 <p className="font-semibold w-28 text-right text-blue-600 dark:text-blue-400">
-                    {formatCurrency(item.price * item.quantity)}
+                  {formatCurrency(item.price * item.quantity)}
                 </p>
-                
-                <button 
-                  onClick={() => removeFromCart(item.id)} 
+
+                <button
+                  onClick={() => removeFromCart(item.id)}
                   className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   title="Xóa sản phẩm"
                 >
@@ -98,25 +98,25 @@ const CartPage: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 sticky top-24">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Tóm tắt đơn hàng</h2>
-            
+
             <div className="flex justify-between mb-2 text-gray-600 dark:text-gray-300">
               <span>Tạm tính</span>
               <span>{formatCurrency(cartTotal)}</span>
             </div>
-            
+
             <div className="flex justify-between mb-4 text-gray-600 dark:text-gray-300">
               <span>Phí vận chuyển</span>
               <span className="text-green-600 font-medium">Miễn phí</span>
             </div>
-            
+
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between font-bold text-lg text-gray-900 dark:text-white">
               <span>Tổng cộng</span>
               <span className="text-blue-600 dark:text-blue-400">{formatCurrency(cartTotal)}</span>
             </div>
-            
-            <button className="w-full mt-6 bg-blue-600 text-white py-3 rounded-full font-bold hover:bg-blue-700 transition-transform active:scale-95 shadow-md">
+
+            <Link href="/checkout" className="w-full mt-6 bg-blue-600 text-white py-3 rounded-full font-bold hover:bg-blue-700 transition-transform active:scale-95 shadow-md block text-center">
               Tiến hành thanh toán
-            </button>
+            </Link>
           </div>
         </div>
       </div>

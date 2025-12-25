@@ -275,8 +275,8 @@ const Header: React.FC = () => {
                         <span>{cartTotal.toLocaleString()}₫</span>
                       </div>
                       <div className="flex gap-2">
-                        <Link href="/cart" className="flex-1 text-center bg-gray-200 dark:bg-gray-600 text-sm font-bold py-2 px-4 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500">Xem giỏ hàng</Link>
-                        <button className="flex-1 text-center bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-blue-700">Thanh toán</button>
+                        <Link href="/cart" className="flex-1 text-center bg-gray-200 dark:bg-gray-600 text-sm font-bold py-2 px-4 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500" onClick={() => setCartMenuOpen(false)}>Xem giỏ hàng</Link>
+                        <Link href="/checkout" className="flex-1 text-center bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-blue-700" onClick={() => setCartMenuOpen(false)}>Thanh toán</Link>
                       </div>
                     </div>
                   </>
