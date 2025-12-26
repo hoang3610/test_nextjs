@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Order from '@/models/Order';
 import OrderItem from '@/models/OrderItem';
+import Guest from '@/models/Guest';
 import mongoose from 'mongoose';
 
 export async function GET() {
@@ -71,6 +72,41 @@ export async function POST(req: Request) {
         const discount_amount = body.discount_amount || 0;
         const grand_total = subtotal_amount + shipping_fee - discount_amount;
 
+        // --- GUEST HANDLING ---
+        // If user_id is the specific GUEST_USER_ID, save/update to Guest collection
+        const GUEST_ID_CONSTANT = '674488888888888888888888';
+        let guestRecordId = null;
+
+        if (user_id === GUEST_ID_CONSTANT) {
+            // Find guest by phone number
+            let guest = await Guest.findOne({ phone_number: shipping_address.phone_number }).session(session);
+
+            if (!guest) {
+                // Create new Guest
+                guest = new Guest({
+                    full_name: shipping_address.full_name,
+                    email: "guest@example.com", // Placeholder or from body if available
+                    phone_number: shipping_address.phone_number,
+                    addresses: [{
+                        ...shipping_address,
+                        type: 'SHIPPING'
+                    }],
+                    first_seen_at: new Date(),
+                    order_count: 1,
+                    last_order_at: new Date()
+                });
+                await guest.save({ session });
+            } else {
+                // Update existing Guest
+                guest.last_order_at = new Date();
+                guest.order_count += 1;
+                // Requested: Only update last_order (and count), do not append new addresses
+                await guest.save({ session });
+            }
+            guestRecordId = guest._id;
+        }
+        // ----------------------
+
         // 3. Generate Order Code
         const timestamp = Date.now();
         const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -79,6 +115,7 @@ export async function POST(req: Request) {
         // 4. Create Order (Initial State)
         const newOrder = new Order({
             user_id,
+            guest_id: guestRecordId, // Link to Guest table if applicable
             order_code,
             shipping_address,
             payment_method: payment_method || 'COD',

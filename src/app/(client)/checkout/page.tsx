@@ -128,7 +128,8 @@ const CheckoutPage: React.FC = () => {
                     quantity: item.quantity,
                     price: item.price,
                     name: item.name,
-                    sku: item.sku || "SKU-UNKNOWN"
+                    sku: item.sku || "SKU-UNKNOWN",
+                    image_url: item.imageUrl
                 })),
                 subtotal_amount: cartTotal,
                 shipping_fee: 0,

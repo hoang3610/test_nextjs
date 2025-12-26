@@ -6,6 +6,7 @@ const { Schema } = mongoose;
 const OrderSchema = new Schema({
     // User info
     user_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    guest_id: { type: Schema.Types.ObjectId, ref: 'Guest' }, // Optional link to Guest profile
 
     // Identity
     order_code: { type: String, required: true, unique: true, index: true }, // e.g., "ORD-172938"
