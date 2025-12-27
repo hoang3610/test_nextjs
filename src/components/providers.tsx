@@ -1,18 +1,18 @@
 'use client';
 
 import React from 'react';
-import { AuthProvider } from '@/hooks/useAuth';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { CartProvider } from '@/hooks/useCart';
+import { NextAuthProvider } from '@/providers/NextAuthProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
+    <NextAuthProvider>
       <ThemeProvider>
         <CartProvider>
           {children}
         </CartProvider>
       </ThemeProvider>
-    </AuthProvider>
+    </NextAuthProvider>
   );
 }

@@ -1,42 +1,42 @@
-import React, { createContext, useState, useContext, type ReactNode } from 'react';
+'use client';
+
+import { useSession, signOut, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface User {
   name: string;
   role: 'admin' | 'user';
+  email?: string;
+  image?: string;
+  id?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
+  login: (data?: any) => void; // Kept for compatibility, but redirects to login
   logout: () => void;
+  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-
-  const login = (userData: User) => {
-    setUser(userData);
-    // Trong thực tế, bạn sẽ lưu token vào localStorage/cookies ở đây
-  };
-
-  const logout = () => {
-    setUser(null);
-    // Xóa token khỏi localStorage/cookies
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+// Deprecated: No longer needed as we use SessionProvider
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return <>{children}</>;
 };
 
 export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const user = session?.user ? (session.user as User) : null;
+  const isLoading = status === 'loading';
+
+  const login = () => {
+    router.push('/login');
+  };
+
+  const logout = async () => {
+    await signOut({ redirect: true, callbackUrl: '/' });
+  };
+
+  return { user, login, logout, isLoading };
 };

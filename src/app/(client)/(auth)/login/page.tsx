@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { signIn, getSession } from 'next-auth/react';
 
 const LoginPage: React.FC = () => {
-  const { login } = useAuth();
   const router = useRouter();
-  
+
   // State lưu dữ liệu nhập vào
   const [formData, setFormData] = useState({
     email: '',
@@ -27,33 +25,47 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // --- LOGIC MOCK TÀI KHOẢN ---
-    // Giả lập độ trễ mạng 1 giây cho giống thật
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setError('');
 
     const { email, password } = formData;
 
-    // 1. Kiểm tra trường hợp ADMIN
-    if (email === 'admin@hoanggia.com' && password === '123456') {
-      // Login vào Context
-      login({ name: 'Super Admin', role: 'admin' });
-      
-      // Set Cookie để Middleware cho phép đi qua
-      document.cookie = "user_role=ADMIN; path=/; max-age=3600";
-      
-      // Chuyển hướng
-      router.push('/admin/dashboard');
-    } 
-    // 2. Kiểm tra trường hợp USER
-    else if (email === 'user@gmail.com' && password === '123456') {
-      login({ name: 'Khách hàng Juan', role: 'user' });
-      document.cookie = "user_role=USER; path=/; max-age=3600";
-      router.push('/');
-    } 
-    // 3. Sai tài khoản
-    else {
-      setError('Email hoặc mật khẩu không chính xác!');
+    if (!email || !password) {
+      setError('Vui lòng nhập đầy đủ email và mật khẩu');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Gọi hàm signIn của NextAuth
+      const result = await signIn('credentials', {
+        redirect: false, // Không tự động chuyển trang để mình handle lỗi
+        email,
+        password
+      });
+
+      if (result?.error) {
+        // Đăng nhập thất bại
+        setError('Email hoặc mật khẩu không chính xác!');
+        setIsLoading(false);
+      } else {
+        // Đăng nhập thành công
+        console.log("Login successfully:", result);
+
+        // Fetch session mới nhất để check Role
+        const session = await getSession();
+
+        if (session?.user?.role === 'ADMIN') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/');
+        }
+
+        router.refresh();
+      }
+
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Có lỗi xảy ra, vui lòng thử lại sau');
       setIsLoading(false);
     }
   };
@@ -66,12 +78,12 @@ const LoginPage: React.FC = () => {
             Đăng nhập
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Mock: admin@hoanggia.com / 123456
+            Đăng nhập tài khoản của bạn
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          
+
           {/* Hiển thị lỗi nếu có */}
           {error && (
             <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm text-center border border-red-200">
@@ -109,8 +121,8 @@ const LoginPage: React.FC = () => {
           </div>
 
           <div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               className="group relative flex w-full justify-center rounded-full border border-transparent bg-blue-600 py-3 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 transition-all"
             >
