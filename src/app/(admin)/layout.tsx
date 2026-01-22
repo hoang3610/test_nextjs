@@ -44,7 +44,8 @@ const AdminLayoutContent = ({ children }: { children: React.ReactNode }) => {
     { name: 'Đơn hàng', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Khách hàng', href: '/admin/customers', icon: Users },
     { name: 'Khách hàng vãng lai', href: '/admin/guests', icon: Users },
-    { name: 'Bài viết', href: '/admin/posts', icon: FileText },
+    { name: 'Bài viết', href: '/admin/blogs', icon: FileText },
+    { name: 'Danh mục bài viết', href: '/admin/blog-categories', icon: FileText },
     { name: 'Cài đặt', href: '/admin/settings', icon: Settings },
   ];
 
