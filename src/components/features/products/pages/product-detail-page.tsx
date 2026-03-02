@@ -6,6 +6,9 @@ import { useCart } from '@/hooks/useCart';
 import { ShoppingCart, Heart, Share2 } from 'lucide-react';
 import { showToast } from '@/components/custom/custom-toast';
 import Lightbox from '@/components/common/Lightbox';
+import ProductTabs from '../components/ProductTabs';
+import NewProductsWidget from '../components/NewProductsWidget';
+import NewBlogsWidget from '@/components/features/blogs/components/NewBlogsWidget';
 import 'react-quill-new/dist/quill.snow.css'; // Import Quill CSS for display
 
 // Re-using types or defining pertinent ones
@@ -371,21 +374,29 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({ product }) => {
                 </div>
             </div>
 
-            {/* Description Tab */}
-            <div className="mt-16">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b pb-2">Mô tả chi tiết</h2>
-                <div className="text-gray-700">
-                    {product.description ? (
-                        <div className="ql-snow">
-                            <div
-                                className="ql-editor"
-                                dangerouslySetInnerHTML={{ __html: product.description }}
-                                style={{ padding: 0, height: 'auto' }} // Override default padding
-                            />
+            {/* NEW LAYOUT: 2 Columns */}
+            <div className="mt-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Main Column (Left - 3/4) */}
+                <div className="lg:col-span-3 space-y-8">
+                    {/* Tabs Section */}
+                    <ProductTabs description={product.description || ''} />
+
+                    {/* Related Products Section */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-[#333] px-6 py-3">
+                            <h3 className="text-white font-bold uppercase text-lg">SẢN PHẨM CÙNG LOẠI</h3>
                         </div>
-                    ) : (
-                        <p>Đang cập nhật...</p>
-                    )}
+                        <div className="p-6">
+                             {/* Placeholder for Related Products - In real app, fetch this based on category */}
+                            <p className="text-gray-500 italic text-center">Đang cập nhật sản phẩm cùng loại...</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sidebar Column (Right - 1/4) */}
+                <div className="lg:col-span-1">
+                    <NewProductsWidget />
+                    <NewBlogsWidget />
                 </div>
             </div>
             {/* Lightbox Overlay */}
